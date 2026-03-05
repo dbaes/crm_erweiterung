@@ -1,5 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from models import db, Customer, Lead
+from flask_migrate import Migrate
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-change-this'
@@ -8,6 +9,9 @@ app.secret_key = 'your-secret-key-change-this'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///crm.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db.init_app(app)
+
+# Initialisiere Flask-Migrate
+migrate = Migrate(app, db)
 
 def init_sample_data():
     with app.app_context():
@@ -20,9 +24,9 @@ def init_sample_data():
             Lead.add_lead('Alice Brown', 'alice@example.com', 'StartUp Inc', 50000, 'Website', customer1.id)
             Lead.add_lead('Charlie Davis', 'charlie@example.com', 'Enterprise Ltd', 100000, 'Referral', customer2.id)
 
-# Erstelle die Tabellen (nur beim ersten Start)
-with app.app_context():
-    db.create_all()
+# nicht mehr nötig wegen Flask-Migrate
+#with app.app_context():
+#    db.create_all()
 
 init_sample_data()
 
