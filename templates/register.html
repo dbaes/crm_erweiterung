@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h1 class="my-4">Registrierung</h1>
+    <form method="POST" action="{{ url_for('register') }}">
+        <!-- Benutzername -->
+        <div class="form-group">
+            <label for="username">Benutzername</label>
+            <input type="text" class="form-control" id="username" name="username" required>
+        </div>
+
+        <!-- Passwort -->
+        <div class="form-group">
+            <label for="password">Passwort</label>
+            <input type="password" class="form-control" id="password" name="password" required>
+        </div>
+
+        <!-- Passwort wiederholen (optional) -->
+        <div class="form-group">
+            <label for="password_confirm">Passwort wiederholen</label>
+            <input type="password" class="form-control" id="password_confirm" name="password_confirm" required>
+        </div>
+
+        <!-- Submit-Button -->
+        <button type="submit" class="btn btn-primary">Registrieren</button>
+
+        <!-- Link zum Login -->
+        <div class="mt-3">
+            <p>Bereits registriert?    <a href="{{ url_for('login') }}">Hier einloggen</a>.</p>
+        </div>
+
+        <!-- Fehlermeldungen anzeigen -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} mt-3">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </form>
+</div>
+{% endblock %}

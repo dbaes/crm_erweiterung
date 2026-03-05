@@ -14,13 +14,13 @@
                 <li><a href="{{ url_for('index') }}" class="nav-link">Home</a></li>
                 <li><a href="{{ url_for('customers') }}" class="nav-link">Customers</a></li>
                 <li><a href="{{ url_for('leads') }}" class="nav-link">Leads</a></li>
-				<li>
-					{% if current_user.is_authenticated %}
-						<a href="{{ url_for('logout') }}">Logout</a>
-					{% else %}
-						<a href="{{ url_for('login') }}">Login</a>
-					{% endif %}
-				</li>
+                <li>
+                    {% if current_user.is_authenticated %}
+                        <a href="{{ url_for('logout') }}">Logout</a>
+                    {% else %}
+                        <a href="{{ url_for('login') }}">Login / Register</a>
+                    {% endif %}
+                </li>
             </ul>
         </div>
     </nav>

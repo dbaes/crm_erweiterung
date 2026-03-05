@@ -177,6 +177,22 @@ def logout():
     flash('Erfolgreich ausgeloggt.', 'info')
     return redirect(url_for('index'))
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        if User.query.filter_by(username=username).first():
+            flash('Benutzername bereits vergeben!', 'error')
+            return redirect(url_for('register'))
+        new_user = User(username=username)
+        new_user.set_password(password)
+        db.session.add(new_user)
+        db.session.commit()
+        flash('Registrierung erfolgreich! Bitte logge dich ein.', 'success')
+        return redirect(url_for('login'))
+    return render_template('register.html')
+
 @app.errorhandler(404)
 def page_not_found(error):
     return render_template('404.html'), 404
