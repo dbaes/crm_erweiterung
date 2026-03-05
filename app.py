@@ -1,6 +1,8 @@
 from flask import Flask, render_template, request, redirect, url_for, flash
 from models import db, Customer, Lead
 from flask_migrate import Migrate
+from flask_login import LoginManager, login_user, logout_user, login_required, current_user
+from models import db, Customer, Lead, User
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-change-this'
@@ -13,6 +15,14 @@ db.init_app(app)
 # Initialisiere Flask-Migrate
 migrate = Migrate(app, db)
 
+#Flask-Login initialisieren
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return User.query.get(int(user_id))
+
 def init_sample_data():
     with app.app_context():
         # Überprüfe, ob bereits Daten existieren
@@ -24,11 +34,21 @@ def init_sample_data():
             Lead.add_lead('Alice Brown', 'alice@example.com', 'StartUp Inc', 50000, 'Website', customer1.id)
             Lead.add_lead('Charlie Davis', 'charlie@example.com', 'Enterprise Ltd', 100000, 'Referral', customer2.id)
 
+def init_user_data():
+    with app.app_context():
+        if not User.query.first():	#Prüfen ob schon ein User existiert
+            admin = User(username='test')
+            admin.set_password('test')
+            db.session.add(admin)
+            db.session.commit()
+            print("Test-User 'test' mit Passwort 'test' angelegt!")
+
 # nicht mehr nötig wegen Flask-Migrate
 #with app.app_context():
 #    db.create_all()
 
 init_sample_data()
+init_user_data() 	#Test User anlegen
 
 @app.route('/')
 def index():
@@ -136,6 +156,26 @@ def delete_lead(lead_id):
     Lead.delete_lead(lead_id)
     flash('Lead deleted successfully!', 'success')
     return redirect(url_for('leads'))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        user = User.query.filter_by(username=username).first()
+        if user and user.check_password(password):
+            login_user(user)
+            flash ('Erfolgreich eingeloggt!', 'success')
+            return redirect(url_for('index'))
+        flash('Ungültiger Benutzername oder Passwort.', 'error')
+    return render_template('login.html')
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash('Erfolgreich ausgeloggt.', 'info')
+    return redirect(url_for('index'))
 
 @app.errorhandler(404)
 def page_not_found(error):
