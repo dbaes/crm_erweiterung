@@ -3,15 +3,87 @@
 {% block content %}
 <h1>{{ lead.name }}</h1>
 
-<p><strong>Email:</strong> {{ lead.email }}</p>
-<p><strong>Company:</strong> {{ lead.company }}</p>
-<p><strong>Value:</strong> ${{ lead.value }}</p>
-<p><strong>Source:</strong> {{ lead.source }}</p>
+<!-- Kontaktinformationen -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5>Kontaktdaten</h5>
+    </div>
+    <div class="card-body">
+        <p><strong>E-Mail:</strong> {{ lead.email }}</p>
+        <p><strong>Firma:</strong> {{ lead.company }}</p>
+        <p><strong>Deal-Wert:</strong> ${{ lead.value }}</p>
+        <p><strong>Quelle:</strong>
+            {% if lead.source == 'Website' %}Website
+            {% elif lead.source == 'Email' %}E-Mail
+            {% elif lead.source == 'Referral' %}Empfehlung
+            {% elif lead.source == 'Advertisement' %}Werbung
+            {% elif lead.source == 'Other' %}Sonstiges
+            {% else %}{{ lead.source }}
+            {% endif %}
+        </p>
+    </div>
+</div>
 
-<p>
-    <form method="POST" action="{{ url_for('delete_lead', lead_id=lead.id) }}" style="display:inline">
-        <button type="submit" class="btn btn-danger" onclick="return confirm('Delete?')">Delete</button>
+<!-- Adressinformationen -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5>Adressdaten</h5>
+    </div>
+    <div class="card-body">
+        <p><strong>Straße:</strong> {{ lead.street }}</p>
+        <p><strong>PLZ:</strong> {{ lead.postal_code }}</p>
+        <p><strong>Ort:</strong> {{ lead.city }}</p>
+        <p><strong>Land:</strong> {{ lead.country }}</p>
+        {% if lead.lat and lead.lng %}
+        <p><strong>Koordinaten:</strong>
+            <a href="https://www.openstreetmap.org/?mlat={{ lead.lat }}&mlon={{ lead.lng }}#map=15/{{ lead.lat }}/{{ lead.lng }}"
+               target="_blank">
+                {{ lead.lat }}, {{ lead.lng }} (auf Karte anzeigen)
+            </a>
+        </p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Karte -->
+{% if lead.lat and lead.lng %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5>Standort</h5>
+    </div>
+    <div class="card-body">
+        <div id="map" style="height: 300px; width: 100%;"></div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                if (typeof L !== 'undefined') {
+                    const map = L.map('map').setView([{{ lead.lat }}, {{ lead.lng }}], 15);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    }).addTo(map);
+                    L.marker([{{ lead.lat }}, {{ lead.lng }}]).addTo(map)
+                        .bindPopup('{{ lead.name }}<br>{{ lead.street }}, {{ lead.postal_code }} {{ lead.city }}');
+                } else {
+                    console.error("Leaflet.js konnte nicht geladen werden.");
+                    document.getElementById('map').innerHTML = '<p class="text-danger">Karte konnte nicht geladen werden. Bitte überprüfe deine Internetverbindung.</p>';
+                }
+            });
+        </script>
+    </div>
+</div>
+{% endif %}
+
+<!-- Aktionen -->
+<div style="margin-top: 1.5rem;">
+    <a href="{{ url_for('edit_lead', lead_id=lead.id) }}" class="btn btn-primary" style="margin-right: 0.5rem;">
+        <i class="fas fa-edit"></i> Bearbeiten
+    </a>
+    <form method="POST" action="{{ url_for('delete_lead', lead_id=lead.id) }}" style="display:inline; margin-right: 0.5rem;">
+        <button type="submit" class="btn btn-danger" onclick="return confirm('Wirlich löschen?')">
+            <i class="fas fa-trash"></i> Löschen
+        </button>
     </form>
-    <a href="{{ url_for('leads') }}" class="btn btn-primary">Back</a>
-</p>
+    <a href="{{ url_for('leads') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Zurück
+    </a>
+</div>
 {% endblock %}

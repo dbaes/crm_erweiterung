@@ -711,7 +711,7 @@ if __name__ == '__main__':
         </div>
 
         <div class="form-group">
-            <label for="email">Email Address *</label>
+            <label for="email">Email Adress *</label>
             <input type="email" id="email" name="email" class="form-control" required placeholder="customer@example.com">
         </div>
 
@@ -763,7 +763,7 @@ if __name__ == '__main__':
         </div>
 
         <div class="form-group">
-            <label for="email">Email Address *</label>
+            <label for="email">Email Adress *</label>
             <input type="email" id="email" name="email" class="form-control" required value="{{ customer.email }}">
         </div>
 
@@ -969,7 +969,7 @@ if __name__ == '__main__':
         </div>
 
         <div class="form-group">
-            <label for="email">Email Address *</label>
+            <label for="email">Email Adress *</label>
             <input type="email" id="email" name="email" class="form-control" required placeholder="lead@example.com">
         </div>
 

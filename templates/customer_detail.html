@@ -3,16 +3,88 @@
 {% block content %}
 <h1>{{ customer.name }}</h1>
 
-<p><strong>Email:</strong> {{ customer.email }}</p>
-<p><strong>Company:</strong> {{ customer.company }}</p>
-<p><strong>Phone:</strong> {{ customer.phone }}</p>
-<p><strong>Status:</strong> {{ customer.status }}</p>
+<!-- Kontaktinformationen -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5>Kontaktdaten</h5>
+    </div>
+    <div class="card-body">
+        <p><strong>E-Mail:</strong> {{ customer.email }}</p>
+        <p><strong>Firma:</strong> {{ customer.company }}</p>
+        <p><strong>Telefon:</strong> {{ customer.phone }}</p>
+        <p><strong>Status:</strong>
+            {% if customer.status == 'prospect' %}Interessent
+            {% elif customer.status == 'active' %}Aktiv
+            {% elif customer.status == 'inactive' %}Inaktiv
+            {% else %}{{ customer.status }}
+            {% endif %}
+        </p>
+    </div>
+</div>
 
+<!-- Adressinformationen -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h5>Adressdaten</h5>
+    </div>
+    <div class="card-body">
+        <p><strong>Straße:</strong> {{ customer.street }}</p>
+        <p><strong>PLZ:</strong> {{ customer.postal_code }}</p>
+        <p><strong>Ort:</strong> {{ customer.city }}</p>
+        <p><strong>Land:</strong> {{ customer.country }}</p>
+        {% if customer.lat and customer.lng %}
+        <p><strong>Koordinaten:</strong>
+            <a href="https://www.openstreetmap.org/?mlat={{ customer.lat }}&mlon={{ customer.lng }}#map=15/{{ customer.lat }}/{{ customer.lng }}"
+               target="_blank">
+                {{ customer.lat }}, {{ customer.lng }} (auf Karte anzeigen)
+            </a>
+        </p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Karte -->
+{% if customer.lat and customer.lng %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5>Standort</h5>
+    </div>
+    <div class="card-body">
+        <div id="map" style="height: 300px; width: 100%;"></div>
+        <script>
+            // Überprüfe, ob Leaflet geladen ist
+            if (typeof L !== 'undefined') {
+                // Karte initialisieren
+                const map = L.map('map').setView([{{ customer.lat }}, {{ customer.lng }}], 15);
+
+                // OpenStreetMap-Kacheln hinzufügen
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                }).addTo(map);
+
+                // Marker mit Popup hinzufügen
+                L.marker([{{ customer.lat }}, {{ customer.lng }}]).addTo(map)
+                    .bindPopup('{{ customer.name }}<br>{{ customer.street }}, {{ customer.postal_code }} {{ customer.city }}');
+            } else {
+                document.getElementById('map').innerHTML = '<p class="text-danger">Karte konnte nicht geladen werden. Bitte überprüfe deine Internetverbindung.</p>';
+            }
+        </script>
+    </div>
+</div>
+{% endif %}
+
+<!-- Aktionen -->
 <div style="margin-top: 1.5rem;">
-    <a href="{{ url_for('edit_customer', customer_id=customer.id) }}" class="btn btn-primary" style="margin-right: 0.5rem;">Edit</a>
+    <a href="{{ url_for('edit_customer', customer_id=customer.id) }}" class="btn btn-primary" style="margin-right: 0.5rem;">
+        <i class="fas fa-edit"></i> Bearbeiten
+    </a>
     <form method="POST" action="{{ url_for('delete_customer', customer_id=customer.id) }}" style="display:inline; margin-right: 0.5rem;">
-        <button type="submit" class="btn btn-danger" onclick="return confirm('Delete?')">Delete</button>
+        <button type="submit" class="btn btn-danger" onclick="return confirm('Wirlich löschen?')">
+            <i class="fas fa-trash"></i> Löschen
+        </button>
     </form>
-    <a href="{{ url_for('customers') }}" class="btn btn-primary">Back</a>
+    <a href="{{ url_for('customers') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Zurück
+    </a>
 </div>
 {% endblock %}
