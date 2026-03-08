@@ -52,15 +52,20 @@ init_user_data() 	#Test User anlegen
 
 @app.route('/')
 def index():
-    total_customers = len(Customer.get_all_customers())
-    total_leads = len(Lead.get_all_leads())
-    return render_template('index.html', total_customers=total_customers, total_leads=total_leads)
+    if current_user.is_authenticated:
+        total_customers = len(Customer.get_all_customers())
+        total_leads = len(Lead.get_all_leads())
+        return render_template('index.html', total_customers=total_customers, total_leads=total_leads)
+    else:
+        return render_template('index.html')
 
 @app.route('/customers')
+@login_required
 def customers():
     return render_template('customers.html', customers=Customer.get_all_customers())
 
 @app.route('/customers/add', methods=['GET', 'POST'])
+@login_required
 def add_customer():
     if request.method == 'POST':
         name = request.form.get('name')
@@ -79,6 +84,7 @@ def add_customer():
     return render_template('add_customer.html')
 
 @app.route('/customers/<int:customer_id>')
+@login_required
 def customer_detail(customer_id):
     customer = Customer.get_customer_by_id(customer_id)
     if not customer:
@@ -87,6 +93,7 @@ def customer_detail(customer_id):
     return render_template('customer_detail.html', customer=customer)
 
 @app.route('/customers/<int:customer_id>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_customer(customer_id):
     customer = Customer.get_customer_by_id(customer_id)
     if not customer:
@@ -108,16 +115,19 @@ def edit_customer(customer_id):
     return render_template('edit_customer.html', customer=customer)
 
 @app.route('/customers/<int:customer_id>/delete', methods=['POST'])
+@login_required
 def delete_customer(customer_id):
     Customer.delete_customer(customer_id)
     flash('Customer deleted successfully!', 'success')
     return redirect(url_for('customers'))
 
 @app.route('/leads')
+@login_required
 def leads():
     return render_template('leads.html', leads=Lead.get_all_leads())
 
 @app.route('/leads/add', methods=['GET', 'POST'])
+@login_required
 def add_lead():
     if request.method == 'POST':
         name = request.form.get('name')
@@ -144,6 +154,7 @@ def add_lead():
     return render_template('add_lead.html', customers=customers)
 
 @app.route('/leads/<int:lead_id>')
+@login_required
 def lead_detail(lead_id):
     lead = Lead.get_lead_by_id(lead_id)
     if not lead:
@@ -152,6 +163,7 @@ def lead_detail(lead_id):
     return render_template('lead_detail.html', lead=lead)
 
 @app.route('/leads/<int:lead_id>/delete', methods=['POST'])
+@login_required
 def delete_lead(lead_id):
     Lead.delete_lead(lead_id)
     flash('Lead deleted successfully!', 'success')
