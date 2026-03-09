@@ -139,11 +139,13 @@ def index():
 
 # --- Kunden-Routen ---
 @app.route('/customers')
+@login_required
 def customers():
     """Zeigt alle Kunden an."""
     return render_template('customers.html', customers=Customer.get_all_customers())
 
 @app.route('/customers/add', methods=['GET', 'POST'])
+@login_required
 def add_customer():
     if request.method == 'POST':
         form_data = {
@@ -187,6 +189,7 @@ def add_customer():
     return render_template('add_customer.html')
 
 @app.route('/customers/<int:customer_id>')
+@login_required
 def customer_detail(customer_id):
     """Zeigt Details zu einem Kunden an."""
     customer = Customer.get_customer_by_id(customer_id)
@@ -196,6 +199,7 @@ def customer_detail(customer_id):
     return render_template('customer_detail.html', customer=customer)
 
 @app.route('/customers/<int:customer_id>/edit', methods=['GET', 'POST'])
+@login_required
 def edit_customer(customer_id):
     """Bearbeitet einen bestehenden Kunden (mit Adressvalidierung)."""
     customer = Customer.get_customer_by_id(customer_id)
@@ -238,6 +242,7 @@ def edit_customer(customer_id):
     return render_template('edit_customer.html', customer=customer)
 
 @app.route('/customers/<int:customer_id>/delete', methods=['POST'])
+@login_required
 def delete_customer(customer_id):
     """Löscht einen Kunden."""
     Customer.delete_customer(customer_id)
@@ -246,11 +251,13 @@ def delete_customer(customer_id):
 
 # --- Lead-Routen ---
 @app.route('/leads')
+@login_required
 def leads():
     """Zeigt alle Leads an."""
     return render_template('leads.html', leads=Lead.get_all_leads())
 
 @app.route('/leads/add', methods=['GET', 'POST'])
+@login_required
 def add_lead():
     if request.method == 'POST':
         form_data = {
@@ -301,6 +308,7 @@ def add_lead():
     return render_template('add_lead.html', customers=customers)
 
 @app.route('/leads/<int:lead_id>')
+@login_required
 def lead_detail(lead_id):
     """Zeigt Details zu einem Lead an."""
     lead = Lead.get_lead_by_id(lead_id)
@@ -367,6 +375,7 @@ def edit_lead(lead_id):
 
 
 @app.route('/leads/<int:lead_id>/delete', methods=['POST'])
+@login_required
 def delete_lead(lead_id):
     """Löscht einen Lead."""
     Lead.delete_lead(lead_id)

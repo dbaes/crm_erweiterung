@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1>Welcome to CRM</h1>
-
+<h1>Willkommen im CRM-System</h1>
+{% if current_user.is_authenticated %}
 <div style="margin: 2rem 0;">
+<p>Du bist eingeloggt als {{ current_user.username }}.</p>
     <p style="margin-bottom: 0.5rem;">Total Customers: <strong>{{ total_customers }}</strong></p>
     <p style="margin-bottom: 0;">Total Leads: <strong>{{ total_leads }}</strong></p>
 </div>
@@ -12,4 +13,10 @@
     <a href="{{ url_for('customers') }}" class="btn btn-primary" style="margin-right: 1rem;">View Customers</a>
     <a href="{{ url_for('leads') }}" class="btn btn-primary">View Leads</a>
 </div>
+
+{% else %}
+<div style="margin: 2rem 0;">
+	<p>Bitte <a href="{{ url_for('login') }}">melde dich an</a>, um Kunden und Leads zu verwalten.</p>
+</div>
+{% endif %}
 {% endblock %}
