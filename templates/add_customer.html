@@ -6,33 +6,53 @@
 <form method="POST">
     <div class="form-group">
         <label>Name:</label>
-        <input type="text" name="name" required>
+        <input type="text" name="name" value="{{ name if name else '' }}" required>
     </div>
-    
+
     <div class="form-group">
         <label>Email:</label>
-        <input type="email" name="email" required>
+        <input type="email" name="email" value="{{ email if email else '' }}" required>
     </div>
-    
+
     <div class="form-group">
         <label>Company:</label>
-        <input type="text" name="company" required>
+        <input type="text" name="company" value="{{ company if company else '' }}" required>
     </div>
-    
+
     <div class="form-group">
         <label>Phone:</label>
-        <input type="text" name="phone" required>
+        <input type="text" name="phone" value="{{ phone if phone else '' }}" required>
     </div>
-    
+
+    <div class="form-group">
+        <label for="street">Straße:</label>
+        <input type="text" id="street" name="street" value="{{ street if street else '' }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="postal_code">PLZ:</label>
+        <input type="text" id="postal_code" name="postal_code" value="{{ postal_code if postal_code else '' }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="city">Ort:</label>
+        <input type="text" id="city" name="city" value="{{ city if city else '' }}" required>
+    </div>
+
+    <div class="form-group">
+        <label for="country">Land:</label>
+        <input type="text" id="country" name="country" value="{{ country if country else '' }}" required>
+    </div>
+
     <div class="form-group">
         <label>Status:</label>
         <select name="status">
-            <option>prospect</option>
-            <option>active</option>
-            <option>inactive</option>
+            <option value="prospect" {% if status == 'prospect' %}selected{% endif %}>prospect</option>
+            <option value="active" {% if status == 'active' %}selected{% endif %}>active</option>
+            <option value="inactive" {% if status == 'inactive' %}selected{% endif %}>inactive</option>
         </select>
     </div>
-    
+
     <button type="submit" class="btn btn-primary">Add Customer</button>
 </form>
 {% endblock %}

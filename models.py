@@ -14,11 +14,31 @@ class Customer(db.Model):
     phone = db.Column(db.String(20))
     status = db.Column(db.String(20), default="prospect")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    street = db.Column(db.String(100))          # Adressfeld
+    postal_code = db.Column(db.String(20))      # Adressfeld
+    city = db.Column(db.String(50))             # Adressfeld
+    country = db.Column(db.String(50))           # Adressfeld
+    lat = db.Column(db.Float)                    # Koordinaten
+    lng = db.Column(db.Float)                    # Koordinaten
     leads = db.relationship('Lead', backref='customer', lazy=True)
 
     @classmethod
-    def add_customer(cls, name, email, company, phone, status="prospect"):
-        customer = cls(name=name, email=email, company=company, phone=phone, status=status)
+    def add_customer(cls, name, email, company, phone, status="prospect",
+                    street=None, postal_code=None, city=None, country=None, lat=None, lng=None):
+        """Fügt einen neuen Kunden mit Adressdaten hinzu."""
+        customer = cls(
+            name=name,
+            email=email,
+            company=company,
+            phone=phone,
+            status=status,
+            street=street,
+            postal_code=postal_code,
+            city=city,
+            country=country,
+            lat=lat,
+            lng=lng
+        )
         db.session.add(customer)
         db.session.commit()
         return customer
@@ -32,7 +52,9 @@ class Customer(db.Model):
         return cls.query.get(customer_id)
 
     @classmethod
-    def update_customer(cls, customer_id, name, email, company, phone, status):
+    def update_customer(cls, customer_id, name, email, company, phone, status="prospect",
+                        street=None, postal_code=None, city=None, country=None, lat=None, lng=None):
+        """Aktualisiert einen bestehenden Kunden mit Adressdaten."""
         customer = cls.get_customer_by_id(customer_id)
         if customer:
             customer.name = name
@@ -40,6 +62,12 @@ class Customer(db.Model):
             customer.company = company
             customer.phone = phone
             customer.status = status
+            customer.street = street
+            customer.postal_code = postal_code
+            customer.city = city
+            customer.country = country
+            customer.lat = lat
+            customer.lng = lng
             db.session.commit()
         return customer
 
@@ -61,10 +89,31 @@ class Lead(db.Model):
     status = db.Column(db.String(20), default="new")
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    street = db.Column(db.String(100))          # NEU: Adressfeld
+    postal_code = db.Column(db.String(20))      # NEU: Adressfeld
+    city = db.Column(db.String(50))             # NEU: Adressfeld
+    country = db.Column(db.String(50))           # NEU: Adressfeld
+    lat = db.Column(db.Float)                    # NEU: Koordinaten
+    lng = db.Column(db.Float)                    # NEU: Koordinaten
 
     @classmethod
-    def add_lead(cls, name, email, company, value, source, customer_id):
-        lead = cls(name=name, email=email, company=company, value=value, source=source, customer_id=customer_id)
+    def add_lead(cls, name, email, company, value, source, customer_id,
+                 street=None, postal_code=None, city=None, country=None, lat=None, lng=None):
+        """Fügt einen neuen Lead mit Adressdaten hinzu."""
+        lead = cls(
+            name=name,
+            email=email,
+            company=company,
+            value=value,
+            source=source,
+            customer_id=customer_id,
+            street=street,
+            postal_code=postal_code,
+            city=city,
+            country=country,
+            lat=lat,
+            lng=lng
+        )
         db.session.add(lead)
         db.session.commit()
         return lead
@@ -78,13 +127,34 @@ class Lead(db.Model):
         return cls.query.get(lead_id)
 
     @classmethod
+    def update_lead(cls, lead_id, name, email, company, value, source, customer_id,
+                    street=None, postal_code=None, city=None, country=None, lat=None, lng=None):
+        """Aktualisiert einen bestehenden Lead mit Adressdaten."""
+        lead = cls.get_lead_by_id(lead_id)
+        if lead:
+            lead.name = name
+            lead.email = email
+            lead.company = company
+            lead.value = value
+            lead.source = source
+            lead.customer_id = customer_id
+            lead.street = street
+            lead.postal_code = postal_code
+            lead.city = city
+            lead.country = country
+            lead.lat = lat
+            lead.lng = lng
+            db.session.commit()
+        return lead
+
+    @classmethod
     def delete_lead(cls, lead_id):
         lead = cls.get_lead_by_id(lead_id)
         if lead:
             db.session.delete(lead)
             db.session.commit()
 
-class User(db.Model, UserMixin):    # User-Klasse fürs Login
+class User(db.Model, UserMixin):
     __tablename__ = 'user'
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
@@ -111,4 +181,4 @@ class User(db.Model, UserMixin):    # User-Klasse fürs Login
 
     @classmethod
     def get_user_by_username(cls, username):
-        return cls.query.filter_by(username=username).first
+        return cls.query.filter_by(username=username).first()

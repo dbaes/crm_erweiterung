@@ -1,0 +1,13 @@
+# Importiere benötigte Bibliotheken
+import pytest
+from api.external.adress_validator import AdressValidator
+
+def test_validate_adress():
+    """
+    Testet die Adressvalidierung mit einer bekannten Adresse.
+    """
+    service = AdressValidator()
+    result = service.validate_adress("Wien, Österreich")
+    assert result is not None
+    assert "lat" in result
+    assert "lng" in result
