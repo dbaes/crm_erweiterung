@@ -13,6 +13,16 @@ class AdressValidator:
         self.base_url = base_url
 
     def validate_adress(self, street, postal_code, city, country):
+        url = "https://nominatim.openstreetmap.org/search"
+        params = {
+			"street": street,
+			"postalcode": postal_code,
+			"city": city,
+			"country": country,
+			"format": "json",  # Wichtig: JSON-Antwort anfordern
+			"limit": 1
+		}
+
         """
         Validiert eine Adresse aus Einzelteilen (Straße, PLZ, Ort, Land) und gibt die Koordinaten zurück.
 

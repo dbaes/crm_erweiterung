@@ -136,6 +136,19 @@ Die OpenAPI-Spezifikation liegt im Projekt unter:
 - Admin Dashboard
 - Rollen ändern
 
+## ZulipChat-Integration
+Das CRM-System unterstützt die Integration mit **ZulipChat**, um Benachrichtigungen über neue Kunden, Leads oder wichtige Ereignisse in Echtzeit an definierte Zulip-Streams zu senden.
+
+### Voraussetzungen
+- Ein **Zulip-Server** (z. B. [zulipchat.com](https://zulipchat.com)).
+- Ein **Zulip-Bot** mit den erforderlichen Berechtigungen (Stream-Schreibrechte).
+- Die folgenden Konfigurationsvariablen in deiner Flask-Anwendung:
+  ```python
+  ZULIP_SITE = "https://zulipchat.com"  # URL deiner Zulip-Instanz
+  ZULIP_BOT_EMAIL = "dein-bot@example.com"  # E-Mail-Adresse des Bots
+  ZULIP_API_KEY = "dein-api-token"           # API-Token des Bots
+  ZULIP_STREAM = "crm-benachrichtigungen"    # Name des Ziel-Streams
+
 ### Weitere Funktionen
 - Übersichtliche Darstellung von Kunden und Leads.
 - Bearbeitung und Löschung von Einträgen.

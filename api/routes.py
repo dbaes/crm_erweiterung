@@ -2,6 +2,8 @@ from flask import Blueprint, request, jsonify
 from flask_login import login_required, current_user
 from api.external.adress_validator import AdressValidator
 from models import db, Customer, Lead, User
+from api.external.zulip_notifier import send_zulip_notification
+
 
 # Blueprint für API-Routen
 api_bp = Blueprint("api", __name__)
@@ -24,7 +26,7 @@ def admin_required(f):
 # =============================================
 # ADRESSVALIDIERUNG (bereits vorhanden)
 # =============================================
-@api_bp.route("/validate_adress", methods=["POST"])
+@api_bp.route("/validate_address", methods=["POST"])
 def validate_adress():
     """
     Validiert eine Adresse (strukturiert mit vier Feldern)
@@ -88,7 +90,11 @@ def validate_adress():
         )
         if not result:
             return jsonify({"error": "Adresse nicht gefunden"}), 404
-        return jsonify(result)
+        return jsonify({
+            "success": True,
+            "lat": result["lat"],
+            "lng": result["lng"]
+            })
     except Exception as e:
         return jsonify({"error": f"Serverfehler: {str(e)}"}), 500
 
@@ -756,3 +762,38 @@ def update_user_role(user_id):
     user.role = data["role"]
     db.session.commit()
     return jsonify({"message": f"Rolle von {user.username} zu {user.role} geändert!"})
+
+
+@api_bp.route('/customers', methods=['POST'])
+def create_customer():
+    # ... (bestehender Code für Kunden-Erstellung) ...
+
+    # Benachrichtigung an Zulip senden
+ def send_zulip_notification(subject, message):
+    url = f"{current_app.config['ZULIP_SITE']}/api/v1/messages"
+    payload = {
+        "type": "stream",
+        "to": current_app.config['ZULIP_STREAM'],
+        "subject": subject[:60],  # Max. 60 Zeichen
+        "content": message
+    }
+
+    try:
+        current_app.logger.debug(f"Zulip-Request URL: {url}")
+        current_app.logger.debug(f"Zulip-Payload: {payload}")
+        current_app.logger.debug(f"Zulip-Auth: {current_app.config['ZULIP_BOT_EMAIL']}")
+
+        response = requests.post(
+            url,
+            auth=(current_app.config['ZULIP_BOT_EMAIL'], current_app.config['ZULIP_API_KEY']),
+            json=payload
+        )
+        response.raise_for_status()
+        current_app.logger.debug(f"Zulip-Response: {response.status_code} - {response.text}")
+        return True
+    except requests.exceptions.HTTPError as e:
+        current_app.logger.error(f"Zulip HTTP Error: {e.response.status_code} - {e.response.text}")
+        return False
+    except requests.exceptions.RequestException as e:
+        current_app.logger.error(f"Zulip Request Exception: {e}")
+        return False
