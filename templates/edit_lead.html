@@ -1,0 +1,245 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>Lead bearbeiten: {{ lead.name }}</h1>
+
+<!--
+  Formular zum Bearbeiten eines Leads.
+  Enthält Validierung der Adresse über eine API.
+-->
+<form method="POST" id="editLeadForm">
+    <!-- Grundlegende Lead-Informationen -->
+    <div class="form-group">
+        <label>Name:</label>
+        <input type="text" name="name" class="form-control" value="{{ lead.name }}" required>
+    </div>
+
+    <div class="form-group">
+        <label>E-Mail:</label>
+        <input type="email" name="email" class="form-control" value="{{ lead.email }}" required>
+    </div>
+
+    <div class="form-group">
+        <label>Firma:</label>
+        <input type="text" name="company" class="form-control" value="{{ lead.company }}">
+    </div>
+
+    <!-- Deal-Wert -->
+    <div class="form-group">
+        <label>Deal-Wert:</label>
+        <input type="number" name="value" step="0.01" class="form-control" value="{{ lead.value }}">
+    </div>
+
+    <!-- Quelle -->
+    <div class="form-group">
+        <label>Quelle:</label>
+        <select name="source" class="form-control">
+            <option value="Website" {% if lead.source == 'Website' %}selected{% endif %}>Website</option>
+            <option value="Email" {% if lead.source == 'Email' %}selected{% endif %}>E-Mail</option>
+            <option value="Referral" {% if lead.source == 'Referral' %}selected{% endif %}>Empfehlung</option>
+            <option value="Advertisement" {% if lead.source == 'Advertisement' %}selected{% endif %}>Werbung</option>
+            <option value="Other" {% if lead.source == 'Other' %}selected{% endif %}>Sonstiges</option>
+        </select>
+    </div>
+
+    <!-- Kundenauswahl -->
+    <div class="form-group">
+        <label>Kunde:</label>
+        <select name="customer_id" class="form-control">
+            <option value="">-- Kein Kunde --</option>
+            {% for customer in customers %}
+            <option value="{{ customer.id }}" {% if customer.id == lead.customer_id %}selected{% endif %}>
+                {{ customer.name }} ({{ customer.company }})
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <!-- Adressinformationen -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Adressdaten</h5>
+        </div>
+        <div class="card-body">
+            <div class="form-group">
+                <label>Straße:</label>
+                <input type="text" id="street" name="street" class="form-control" value="{{ lead.street }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>PLZ:</label>
+                <input type="text" id="postal_code" name="postal_code" class="form-control" value="{{ lead.postal_code }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Ort:</label>
+                <input type="text" id="city" name="city" class="form-control" value="{{ lead.city }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Land:</label>
+                <input type="text" id="country" name="country" class="form-control" value="{{ lead.country }}" required>
+            </div>
+
+            <!-- Aktuelle Koordinaten anzeigen, falls vorhanden -->
+            {% if lead.lat and lead.lng %}
+            <div class="alert alert-info">
+                Aktuelle Koordinaten: {{ "%.6f"|format(lead.lat) }}, {{ "%.6f"|format(lead.lng) }}
+            </div>
+            {% endif %}
+
+            <!-- Validierungs-Button -->
+            <button type="button" id="validateAddressBtn" class="btn btn-secondary mb-3">Adresse validieren</button>
+
+            <!-- Bereich für Validierungsmeldungen -->
+            <div id="addressValidationMessage"></div>
+        </div>
+    </div>
+
+    <!-- Versteckte Felder für die Koordinaten -->
+    <input type="hidden" id="lat" name="lat" value="{{ lead.lat if lead.lat else '' }}">
+    <input type="hidden" id="lng" name="lng" value="{{ lead.lng if lead.lng else '' }}">
+
+    <!-- Aktionsbuttons -->
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary">
+            <i class="fas fa-save"></i> Änderungen speichern
+        </button>
+        <a href="{{ url_for('lead_detail', lead_id=lead.id) }}" class="btn btn-secondary">
+            <i class="fas fa-times"></i> Abbrechen
+        </a>
+    </div>
+</form>
+
+<!-- Karte anzeigen, falls Koordinaten vorhanden sind -->
+{% if lead.lat and lead.lng %}
+<div class="card mt-4">
+    <div class="card-header">
+        <h5>Aktueller Standort</h5>
+    </div>
+    <div class="card-body">
+        <div id="map" style="height: 300px; width: 100%;"></div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                if (typeof L !== 'undefined') {
+                    const map = L.map('map').setView([{{ lead.lat }}, {{ lead.lng }}], 15);
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                    }).addTo(map);
+                    L.marker([{{ lead.lat }}, {{ lead.lng }}]).addTo(map)
+                        .bindPopup('{{ lead.name }}<br>{{ lead.street }}, {{ lead.postal_code }} {{ lead.city }}');
+                }
+            });
+        </script>
+    </div>
+</div>
+{% endif %}
+
+<!-- JavaScript für die Adressvalidierung -->
+<script>
+/**
+ * JavaScript-Code zur Adressvalidierung.
+ * Validiert die Adresse über eine API und speichert die Koordinaten in versteckten Feldern.
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    const validateAddressBtn = document.getElementById('validateAddressBtn');
+    const editLeadForm = document.getElementById('editLeadForm');
+    const addressValidationMessage = document.getElementById('addressValidationMessage');
+
+    /**
+     * Event-Listener für den Adressvalidierungs-Button.
+     * Sendet die Adressdaten an die Validierungs-API und verarbeitet die Antwort.
+     */
+    validateAddressBtn.addEventListener('click', function() {
+        const street = document.getElementById('street').value;
+        const postalCode = document.getElementById('postal_code').value;
+        const city = document.getElementById('city').value;
+        const country = document.getElementById('country').value;
+
+        // Überprüfen, ob alle Adressfelder ausgefüllt sind
+        if (!street || !postalCode || !city || !country) {
+            addressValidationMessage.innerHTML = `
+                <div class="alert alert-danger">
+                    Bitte füllen Sie alle Adressfelder aus.
+                </div>
+            `;
+            return;
+        }
+
+        // Statusmeldung anzeigen
+        addressValidationMessage.innerHTML = `
+            <div class="alert alert-info">
+                Adresse wird validiert...
+            </div>
+        `;
+
+        // API-Aufruf zur Adressvalidierung
+        fetch('/api/validate_address', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                street: street,
+                postal_code: postalCode,
+                city: city,
+                country: country
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Koordinaten in versteckten Feldern speichern
+                document.getElementById('lat').value = data.lat;
+                document.getElementById('lng').value = data.lng;
+
+                // Erfolgsmeldung anzeigen
+                addressValidationMessage.innerHTML = `
+                    <div class="alert alert-success">
+                        Adresse erfolgreich validiert! Koordinaten: ${data.lat}, ${data.lng}
+                    </div>
+                `;
+
+                // Karte neu laden, falls vorhanden
+                if (typeof updateMap !== 'undefined') {
+                    updateMap(data.lat, data.lng);
+                }
+            } else {
+                // Fehlermeldung anzeigen
+                addressValidationMessage.innerHTML = `
+                    <div class="alert alert-danger">
+                        Adresse konnte nicht validiert werden: ${data.message}
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Fehlermeldung bei API-Fehler anzeigen
+            addressValidationMessage.innerHTML = `
+                <div class="alert alert-danger">
+                    Fehler bei der Adressvalidierung: ${error.message}
+                </div>
+            `;
+        });
+    });
+
+    /**
+     * Event-Listener für das Formular-Absenden.
+     * Überprüft, ob die Adresse validiert wurde (Koordinaten vorhanden sind).
+     */
+    editLeadForm.addEventListener('submit', function(event) {
+        const lat = document.getElementById('lat').value;
+        const lng = document.getElementById('lng').value;
+
+        // Warnung anzeigen, wenn keine Koordinaten vorhanden sind
+        if (!lat || !lng) {
+            const confirmed = confirm('Die Adresse wurde nicht validiert. Möchten Sie trotzdem speichern?');
+            if (!confirmed) {
+                event.preventDefault();
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

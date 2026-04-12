@@ -11,7 +11,7 @@
     <div class="card-body">
         <p><strong>E-Mail:</strong> {{ lead.email }}</p>
         <p><strong>Firma:</strong> {{ lead.company }}</p>
-        <p><strong>Deal-Wert:</strong> ${{ lead.value }}</p>
+		<p><strong>Deal-Wert:</strong> {{ lead.value | euro }}</p>
         <p><strong>Quelle:</strong>
             {% if lead.source == 'Website' %}Website
             {% elif lead.source == 'Email' %}E-Mail
@@ -21,6 +21,9 @@
             {% else %}{{ lead.source }}
             {% endif %}
         </p>
+        {% if lead.customer %}
+        <p><strong>Kunde:</strong> <a href="{{ url_for('customer_detail', customer_id=lead.customer.id) }}">{{ lead.customer.name }}</a></p>
+        {% endif %}
     </div>
 </div>
 
@@ -34,13 +37,19 @@
         <p><strong>PLZ:</strong> {{ lead.postal_code }}</p>
         <p><strong>Ort:</strong> {{ lead.city }}</p>
         <p><strong>Land:</strong> {{ lead.country }}</p>
+
         {% if lead.lat and lead.lng %}
         <p><strong>Koordinaten:</strong>
             <a href="https://www.openstreetmap.org/?mlat={{ lead.lat }}&mlon={{ lead.lng }}#map=15/{{ lead.lat }}/{{ lead.lng }}"
                target="_blank">
-                {{ lead.lat }}, {{ lead.lng }} (auf Karte anzeigen)
+                {{ "%.6f"|format(lead.lat) }}, {{ "%.6f"|format(lead.lng) }} (auf Karte anzeigen)
             </a>
         </p>
+        {% else %}
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i> Diese Adresse wurde noch nicht validiert.
+            <a href="{{ url_for('edit_lead', lead_id=lead.id) }}" class="alert-link">Hier klicken, um die Adresse zu validieren.</a>
+        </div>
         {% endif %}
     </div>
 </div>
@@ -73,11 +82,11 @@
 {% endif %}
 
 <!-- Aktionen -->
-<div style="margin-top: 1.5rem;">
+<div class="mt-4">
     <a href="{{ url_for('edit_lead', lead_id=lead.id) }}" class="btn btn-primary" style="margin-right: 0.5rem;">
         <i class="fas fa-edit"></i> Bearbeiten
     </a>
-    <form method="POST" action="{{ url_for('delete_lead', lead_id=lead.id) }}" style="display:inline; margin-right: 0.5rem;">
+    <form method="POST" action="{{ url_for('delete_lead', lead_id=lead.id) }}" style="display: inline; margin-right: 0.5rem;">
         <button type="submit" class="btn btn-danger" onclick="return confirm('Wirlich löschen?')">
             <i class="fas fa-trash"></i> Löschen
         </button>

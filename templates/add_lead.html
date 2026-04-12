@@ -3,7 +3,12 @@
 {% block content %}
 <h1>Neuen Lead hinzufügen</h1>
 
-<form method="POST">
+<!--
+  Formular zum Hinzufügen eines neuen Leads.
+  Enthält Validierung der Adresse über eine API.
+-->
+<form method="POST" id="addLeadForm">
+    <!-- Grundlegende Lead-Informationen -->
     <div class="form-group">
         <label>Name:</label>
         <input type="text" name="name" class="form-control" value="{{ name if name else '' }}" required>
@@ -19,6 +24,7 @@
         <input type="text" name="company" class="form-control" value="{{ company if company else '' }}" required>
     </div>
 
+    <!-- Adressinformationen -->
     <div class="form-group">
         <label>Straße:</label>
         <input type="text" id="street" name="street" class="form-control" value="{{ street if street else '' }}" required>
@@ -39,6 +45,7 @@
         <input type="text" id="country" name="country" class="form-control" value="{{ country if country else '' }}" required>
     </div>
 
+    <!-- Weitere Lead-Informationen -->
     <div class="form-group">
         <label>Deal-Wert:</label>
         <input type="number" name="value" step="0.01" class="form-control" value="{{ value if value else '' }}" required>
@@ -66,6 +73,108 @@
         </select>
     </div>
 
-    <button type="submit" class="btn btn-primary">Lead hinzufügen</button>
+    <!-- Versteckte Felder für die Koordinaten, die durch die Adressvalidierung gefüllt werden -->
+    <input type="hidden" id="lat" name="lat">
+    <input type="hidden" id="lng" name="lng">
+
+    <!-- Buttons für Validierung und Absenden -->
+    <div class="form-group">
+        <button type="button" id="validateAddressBtn" class="btn btn-secondary">Adresse validieren</button>
+        <button type="submit" class="btn btn-primary">Lead hinzufügen</button>
+    </div>
+
+    <!-- Bereich für Validierungsmeldungen -->
+    <div id="addressValidationMessage" class="mt-2"></div>
 </form>
+
+<script>
+/**
+ * JavaScript-Code zur Adressvalidierung.
+ * Validiert die Adresse über eine API und speichert die Koordinaten in versteckten Feldern.
+ */
+document.addEventListener('DOMContentLoaded', function() {
+    const validateAddressBtn = document.getElementById('validateAddressBtn');
+    const addLeadForm = document.getElementById('addLeadForm');
+    const addressValidationMessage = document.getElementById('addressValidationMessage');
+
+    /**
+     * Event-Listener für den Adressvalidierungs-Button.
+     * Sendet die Adressdaten an die Validierungs-API und verarbeitet die Antwort.
+     */
+    validateAddressBtn.addEventListener('click', function() {
+        const street = document.getElementById('street').value;
+        const postalCode = document.getElementById('postal_code').value;
+        const city = document.getElementById('city').value;
+        const country = document.getElementById('country').value;
+
+        // Überprüfen, ob alle Adressfelder ausgefüllt sind
+        if (!street || !postalCode || !city || !country) {
+            addressValidationMessage.innerHTML = '<div class="alert alert-danger">Bitte füllen Sie alle Adressfelder aus.</div>';
+            return;
+        }
+
+        // Statusmeldung anzeigen
+        addressValidationMessage.innerHTML = '<div class="alert alert-info">Adresse wird validiert...</div>';
+
+        // API-Aufruf zur Adressvalidierung
+        fetch('/api/validate_address', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                street: street,
+                postal_code: postalCode,
+                city: city,
+                country: country
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Koordinaten in versteckten Feldern speichern
+                document.getElementById('lat').value = data.lat;
+                document.getElementById('lng').value = data.lng;
+                // Erfolgsmeldung anzeigen
+                addressValidationMessage.innerHTML = `
+                    <div class="alert alert-success">
+                        Adresse erfolgreich validiert! Koordinaten: ${data.lat}, ${data.lng}
+                    </div>
+                `;
+            } else {
+                // Fehlermeldung anzeigen
+                addressValidationMessage.innerHTML = `
+                    <div class="alert alert-danger">
+                        Adresse konnte nicht validiert werden: ${data.message}
+                    </div>
+                `;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Fehlermeldung bei API-Fehler anzeigen
+            addressValidationMessage.innerHTML = `
+                <div class="alert alert-danger">
+                    Fehler bei der Adressvalidierung: ${error.message}
+                </div>
+            `;
+        });
+    });
+
+    /**
+     * Event-Listener für das Formular-Absenden.
+     * Überprüft, ob die Adresse validiert wurde (Koordinaten vorhanden sind).
+     */
+    addLeadForm.addEventListener('submit', function(event) {
+        const lat = document.getElementById('lat').value;
+        const lng = document.getElementById('lng').value;
+
+        // Wenn keine Koordinaten vorhanden sind, Validierung erzwingen
+        if (!lat || !lng) {
+            event.preventDefault();
+            addressValidationMessage.innerHTML = '<div class="alert alert-danger">Bitte validieren Sie zuerst die Adresse.</div>';
+        }
+    });
+});
+</script>
 {% endblock %}

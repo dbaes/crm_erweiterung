@@ -2,7 +2,7 @@
 
 {% block content %}
 <h1>Login</h1>
-<form method="POST">
+<form method="POST" action="{{ url_for('login') }}">
     <div class="form-group">
         <label>Benutzername:</label>
         <input type="text" name="username" class="form-control" required>
@@ -10,27 +10,26 @@
     <div class="form-group">
         <label>Passwort:</label>
         <input type="password" name="password" class="form-control" required>
-
-    <button type="submit" class="btn btn-primary">Login</button>
     </div>
-	<div>
-        <!-- Registrierungs-Button -->
-        <div class="mt-2">
-            <p>Noch keinen Account? 
+    <button type="submit" class="btn btn-primary">Login</button>
+
+    <div class="mt-2">
+        <p>Noch keinen Account?
           <a href="{{ url_for('register') }}" class="btn btn-outline-secondary" role="button">
                Jetzt Registrieren
-           </a>
-		   </p>
-        </div>
-        <!-- Fehlermeldungen -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} mt-3">
-                        {{ message }}
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
+          </a>
+        </p>
+    </div>
+
+    <!-- Fehlermeldungen -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} mt-3">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
 </form>
 {% endblock %}

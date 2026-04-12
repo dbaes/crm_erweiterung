@@ -1,58 +1,59 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1>Kunden bearbeiten</h1>
+<h1>Edit Customer</h1>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+        {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+{% endwith %}
 
 <form method="POST">
     <div class="form-group">
         <label>Name:</label>
         <input type="text" name="name" class="form-control" value="{{ customer.name }}" required>
     </div>
-
     <div class="form-group">
-        <label>E-Mail:</label>
+        <label>Email:</label>
         <input type="email" name="email" class="form-control" value="{{ customer.email }}" required>
     </div>
-
     <div class="form-group">
-        <label>Firma:</label>
-        <input type="text" name="company" class="form-control" value="{{ customer.company }}" required>
+        <label>Company:</label>
+        <input type="text" name="company" class="form-control" value="{{ customer.company }}">
     </div>
-
     <div class="form-group">
-        <label>Telefon:</label>
-        <input type="text" name="phone" class="form-control" value="{{ customer.phone }}" required>
+        <label>Phone:</label>
+        <input type="text" name="phone" class="form-control" value="{{ customer.phone }}">
     </div>
-
-    <div class="form-group">
-        <label>Straße:</label>
-        <input type="text" id="street" name="street" class="form-control" value="{{ customer.street }}" required>
-    </div>
-
-    <div class="form-group">
-        <label>PLZ:</label>
-        <input type="text" id="postal_code" name="postal_code" class="form-control" value="{{ customer.postal_code }}" required>
-    </div>
-
-    <div class="form-group">
-        <label>Ort:</label>
-        <input type="text" id="city" name="city" class="form-control" value="{{ customer.city }}" required>
-    </div>
-
-    <div class="form-group">
-        <label>Land:</label>
-        <input type="text" id="country" name="country" class="form-control" value="{{ customer.country }}" required>
-    </div>
-
     <div class="form-group">
         <label>Status:</label>
         <select name="status" class="form-control">
-            <option value="prospect" {% if customer.status == 'prospect' %}selected{% endif %}>Interessent</option>
-            <option value="active" {% if customer.status == 'active' %}selected{% endif %}>Aktiv</option>
-            <option value="inactive" {% if customer.status == 'inactive' %}selected{% endif %}>Inaktiv</option>
+            <option value="prospect" {% if customer.status == 'prospect' %}selected{% endif %}>Prospect</option>
+            <option value="active" {% if customer.status == 'active' %}selected{% endif %}>Active</option>
+            <option value="inactive" {% if customer.status == 'inactive' %}selected{% endif %}>Inactive</option>
         </select>
     </div>
-
-    <button type="submit" class="btn btn-primary">Kunde aktualisieren</button>
+    <div class="form-group">
+        <label>Street:</label>
+        <input type="text" name="street" class="form-control" value="{{ customer.street }}" required>
+    </div>
+    <div class="form-group">
+        <label>Postal Code:</label>
+        <input type="text" name="postal_code" class="form-control" value="{{ customer.postal_code }}" required>
+    </div>
+    <div class="form-group">
+        <label>City:</label>
+        <input type="text" name="city" class="form-control" value="{{ customer.city }}" required>
+    </div>
+    <div class="form-group">
+        <label>Country:</label>
+        <input type="text" name="country" class="form-control" value="{{ customer.country }}" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Update Customer</button>
 </form>
 {% endblock %}

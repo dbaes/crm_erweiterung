@@ -2,21 +2,116 @@
 
 {% block content %}
 <h1>Willkommen im CRM-System</h1>
+
 {% if current_user.is_authenticated %}
-<div style="margin: 2rem 0;">
-<p>Du bist eingeloggt als {{ current_user.username }}.</p>
-    <p style="margin-bottom: 0.5rem;">Total Customers: <strong>{{ total_customers }}</strong></p>
-    <p style="margin-bottom: 0;">Total Leads: <strong>{{ total_leads }}</strong></p>
-</div>
+    <div class="row mb-4">
+        <!-- Statistik-Karten -->
+        <div class="col-md-6">
+            <div class="card text-white bg-primary mb-3">
+                <div class="card-header">Kunden</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ total_customers }}</h5>
+                    <p class="card-text">Gesamtzahl der Kunden</p>
+                    <a href="{{ url_for('customers') }}" class="btn btn-light">Alle Kunden anzeigen</a>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card text-white bg-success mb-3">
+                <div class="card-header">Leads</div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ total_leads }}</h5>
+                    <p class="card-text">Gesamtzahl der Leads</p>
+                    <a href="{{ url_for('leads') }}" class="btn btn-light">Alle Leads anzeigen</a>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<div style="margin-top: 2rem;">
-    <a href="{{ url_for('customers') }}" class="btn btn-primary" style="margin-right: 1rem;">View Customers</a>
-    <a href="{{ url_for('leads') }}" class="btn btn-primary">View Leads</a>
-</div>
+    <div class="row">
+        <!-- Neueste Kunden -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Neueste Kunden</h5>
+                </div>
+                <div class="card-body">
+                    {% if newest_customers %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Firma</th>
+                                    <th>Erstellt am</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for customer in newest_customers %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('customer_detail', customer_id=customer.id) }}">
+                                            {{ customer.name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ customer.company }}</td>
+                                    <td>{{ customer.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p>Keine Kunden vorhanden.</p>
+                    {% endif %}
+                    <a href="{{ url_for('customers') }}" class="btn btn-primary">Alle Kunden anzeigen</a>
+                </div>
+            </div>
+        </div>
 
+        <!-- Neueste Leads -->
+        <div class="col-md-6">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5>Neueste Leads</h5>
+                </div>
+                <div class="card-body">
+                    {% if newest_leads %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Firma</th>
+                                    <th>Wert</th>
+                                    <th>Erstellt am</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for lead in newest_leads %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ url_for('lead_detail', lead_id=lead.id) }}">
+                                            {{ lead.name }}
+                                        </a>
+                                    </td>
+                                    <td>{{ lead.company }}</td>
+                                    <td>{{ lead.value | euro }}</td>
+                                    <td>{{ lead.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p>Keine Leads vorhanden.</p>
+                    {% endif %}
+                    <a href="{{ url_for('leads') }}" class="btn btn-primary">Alle Leads anzeigen</a>
+                </div>
+            </div>
+        </div>
+    </div>
 {% else %}
-<div style="margin: 2rem 0;">
-	<p>Bitte <a href="{{ url_for('login') }}">melde dich an</a>, um Kunden und Leads zu verwalten.</p>
-</div>
+    <p>Bitte <a href="{{ url_for('login') }}">melden Sie sich an</a>, um das CRM-System zu nutzen.</p>
 {% endif %}
 {% endblock %}
