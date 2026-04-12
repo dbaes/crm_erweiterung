@@ -1,0 +1,36 @@
+openapi: 3.0.0
+info:
+  title: CRM REST API
+  description: API für Adressvalidierung und Kundenverwaltung
+  version: 1.0.0
+paths:
+  /api/validate_address:
+    post:
+      summary: Validiert eine Adresse
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                address:
+                  type: string
+                  example: "Wien, Österreich"
+      responses:
+        '200':
+          description: Erfolgreiche Validierung
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  lat:
+                    type: number
+                    example: 52.5200
+                  lng:
+                    type: number
+                    example: 13.4050
+                  formattedAddress:
+                    type: string
+                    example: "Wien, Österreich"
