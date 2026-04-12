@@ -1,45 +1,39 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+
+{% block title %}Registrieren{% endblock %}
 
 {% block content %}
-<div class="container">
-    <h1 class="my-4">Registrierung</h1>
-    <form method="POST" action="{{ url_for('register') }}">
-        <!-- Benutzername -->
-        <div class="form-group">
-            <label for="username">Benutzername</label>
-            <input type="text" class="form-control" id="username" name="username" required>
-        </div>
-
-        <!-- Passwort -->
-        <div class="form-group">
-            <label for="password">Passwort</label>
-            <input type="password" class="form-control" id="password" name="password" required>
-        </div>
-
-        <!-- Passwort wiederholen -->
-        <div class="form-group">
-            <label for="password_confirm">Passwort wiederholen</label>
-            <input type="password" class="form-control" id="password_confirm" name="password_confirm" required>
-        </div>
-
-        <!-- Submit-Button -->
-        <button type="submit" class="btn btn-primary">Registrieren</button>
-
-        <!-- Link zum Login -->
-        <div class="mt-3">
-            <p>Bereits registriert? <a href="{{ url_for('login') }}">Hier einloggen</a>.</p>
-        </div>
-
-        <!-- Fehlermeldungen anzeigen -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} mt-3">
-                        {{ message }}
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow">
+            <div class="card-body">
+                <h3 class="card-title text-center mb-4">Account erstellen</h3>
+                <form method="POST">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Benutzername</label>
+                        <input type="text" name="username" id="username" class="form-control" placeholder="Dein Name" required autofocus>
                     </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-    </form>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label">E-Mail-Adresse</label>
+                        <input type="email" name="email" id="email" class="form-control" placeholder="name@beispiel.at" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Passwort</label>
+                        <input type="password" name="password" id="password" class="form-control" placeholder="Sicheres Passwort" required>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Registrieren</button>
+                    </div>
+                </form>
+                <hr>
+                <div class="text-center">
+                    <p class="small">Bereits Mitglied? <a href="{{ url_for('login') }}" class="text-decoration-none">Hier einloggen</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}

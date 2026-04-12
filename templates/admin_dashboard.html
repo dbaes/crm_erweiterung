@@ -30,13 +30,24 @@
                             </span>
                         </td>
                         <td>
-                            <form action="{{ url_for('api.api_update_user_role', user_id=user.id) }}" method="post">
-                                <select name="role" class="form-select form-select-sm d-inline w-auto">
+                            <div class="d-flex gap-2">
+                                <select id="role-select-{{ user.id }}" class="form-select form-select-sm w-auto">
                                     <option value="user" {% if user.role == 'user' %}selected{% endif %}>Benutzer</option>
                                     <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
                                 </select>
-                                <button type="submit" class="btn btn-sm btn-success">Rolle ändern</button>
-                            </form>
+                                
+                                <button onclick="changeRole('{{ user.id }}', document.getElementById('role-select-{{ user.id }}').value)" 
+                                        class="btn btn-sm btn-success">
+                                    Speichern
+                                </button>
+
+                                {% if user.id != current_user.id %}
+                                <button onclick="deleteUser('{{ user.id }}', '{{ user.username }}')" 
+                                        class="btn btn-sm btn-danger">
+                                    Löschen
+                                </button>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
