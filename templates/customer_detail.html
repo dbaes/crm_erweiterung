@@ -3,6 +3,13 @@
 {% block content %}
 <h1>{{ customer.name }}</h1>
 
+<!-- Debug-Ausgabe für Koordinaten -->
+{% if customer.lat and customer.lng %}
+<p>Koordinaten vorhanden: Latitude = {{ customer.lat }}, Longitude = {{ customer.lng }}</p>
+{% else %}
+<p class="text-warning">Keine Koordinaten für diesen Kunden vorhanden.</p>
+{% endif %}
+
 <!-- Kontaktinformationen -->
 <div class="card mb-4">
     <div class="card-header">
@@ -52,23 +59,36 @@
     <div class="card-body">
         <div id="map" style="height: 300px; width: 100%;"></div>
         <script>
-            // Überprüfe, ob Leaflet geladen ist
-            if (typeof L !== 'undefined') {
-                // Karte initialisieren
-                const map = L.map('map').setView([{{ customer.lat }}, {{ customer.lng }}], 15);
-
-                // OpenStreetMap-Kacheln hinzufügen
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-                }).addTo(map);
-
-                // Marker mit Popup hinzufügen
-                L.marker([{{ customer.lat }}, {{ customer.lng }}]).addTo(map)
-                    .bindPopup('{{ customer.name }}<br>{{ customer.street }}, {{ customer.postal_code }} {{ customer.city }}');
-            } else {
-                document.getElementById('map').innerHTML = '<p class="text-danger">Karte konnte nicht geladen werden. Bitte überprüfe deine Internetverbindung.</p>';
-            }
+            document.addEventListener('DOMContentLoaded', function() {
+                console.log("DOMContentLoaded-Event ausgelöst.");
+                if (typeof L !== 'undefined') {
+                    console.log("Leaflet ist geladen!");
+                    try {
+                        const map = L.map('map').setView([{{ customer.lat }}, {{ customer.lng }}], 15);
+                        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        }).addTo(map);
+                        L.marker([{{ customer.lat }}, {{ customer.lng }}]).addTo(map)
+                            .bindPopup('{{ customer.name }}<br>{{ customer.street }}, {{ customer.postal_code }} {{ customer.city }}');
+                    } catch (e) {
+                        console.error("Fehler beim Laden der Karte:", e);
+                        document.getElementById('map').innerHTML = '<p class="text-danger">Fehler beim Laden der Karte. Siehe Browser-Konsole für Details.</p>';
+                    }
+                } else {
+                    console.error("Leaflet ist nicht geladen!");
+                    document.getElementById('map').innerHTML = '<p class="text-danger">Leaflet konnte nicht geladen werden.</p>';
+                }
+            });
         </script>
+    </div>
+</div>
+{% else %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h5>Standort</h5>
+    </div>
+    <div class="card-body">
+        <p class="text-danger">Keine Koordinaten für diesen Kunden vorhanden.</p>
     </div>
 </div>
 {% endif %}

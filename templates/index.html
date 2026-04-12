@@ -111,6 +111,80 @@
             </div>
         </div>
     </div>
+
+    <!-- Karte für Kunden- und Lead-Standorte -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Standorte aller Kunden und Leads</h5>
+        </div>
+        <div class="card-body">
+            <div id="dashboard-map" style="height: 500px; width: 100%;"></div>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    if (typeof L !== 'undefined') {
+                        try {
+                            // Karte initialisieren (Mitteleuropa)
+                            const map = L.map('dashboard-map').setView([48.8, 10.2], 5);
+
+                            // OpenStreetMap-Kacheln hinzufügen
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                            }).addTo(map);
+
+                            // Marker für Kunden (blau)
+                            {% for customer in customers %}
+                            {% if customer.lat and customer.lng %}
+                            L.marker([{{ customer.lat }}, {{ customer.lng }}], {
+                                icon: L.icon({
+                                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+                                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                                    iconSize: [25, 41],
+                                    iconAnchor: [12, 41],
+                                    popupAnchor: [1, -34],
+                                    shadowSize: [41, 41]
+                                })
+                            }).addTo(map)
+                                .bindPopup(`
+                                    <b>{{ customer.name }}</b><br>
+                                    <i class="fas fa-user"></i> Kunde<br>
+                                    {{ customer.street }}, {{ customer.postal_code }} {{ customer.city }}<br>
+                                    <a href="{{ url_for('customer_detail', customer_id=customer.id) }}">Details anzeigen</a>
+                                `);
+                            {% endif %}
+                            {% endfor %}
+
+                            // Marker für Leads (grün)
+                            {% for lead in leads %}
+                            {% if lead.lat and lead.lng %}
+                            L.marker([{{ lead.lat }}, {{ lead.lng }}], {
+                                icon: L.icon({
+                                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+                                    iconSize: [25, 41],
+                                    iconAnchor: [12, 41],
+                                    popupAnchor: [1, -34],
+                                    shadowSize: [41, 41]
+                                })
+                            }).addTo(map)
+                                .bindPopup(`
+                                    <b>{{ lead.name }}</b><br>
+                                    <i class="fas fa-user-clock"></i> Lead<br>
+                                    {{ lead.street }}, {{ lead.postal_code }} {{ lead.city }}<br>
+                                    <a href="{{ url_for('lead_detail', lead_id=lead.id) }}">Details anzeigen</a>
+                                `);
+                            {% endif %}
+                            {% endfor %}
+                        } catch (e) {
+                            console.error("Fehler beim Laden der Karte:", e);
+                            document.getElementById('dashboard-map').innerHTML = '<p class="text-danger">Fehler beim Laden der Karte. Siehe Browser-Konsole für Details.</p>';
+                        }
+                    } else {
+                        document.getElementById('dashboard-map').innerHTML = '<p class="text-danger">Leaflet konnte nicht geladen werden.</p>';
+                    }
+                });
+            </script>
+        </div>
+    </div>
 {% else %}
     <p>Bitte <a href="{{ url_for('login') }}">melden Sie sich an</a>, um das CRM-System zu nutzen.</p>
 {% endif %}

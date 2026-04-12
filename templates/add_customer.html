@@ -1,5 +1,15 @@
 {% extends 'base.html' %}
-
+{% if current_user.role == 'admin' %}
+    <!-- Formular zum Hinzufügen eines Kunden -->
+    <form method="POST">
+        <!-- Felder hier -->
+        <button type="submit" class="btn btn-primary">Kunde hinzufügen</button>
+    </form>
+{% else %}
+    <div class="alert alert-warning">
+        Nur Admins dürfen Kunden hinzufügen.
+    </div>
+{% endif %}
 {% block content %}
 <h1>Add Customer</h1>
 

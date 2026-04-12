@@ -33,4 +33,37 @@
     </tr>
     {% endfor %}
 </table>
+
+<!-- Karte für Kundenadressen -->
+{% if customers %}
+<div class="mt-4">
+    <h2>Kundenstandorte</h2>
+    <div id="map" style="height: 400px; width: 100%;"></div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Karte initialisieren
+    var map = L.map('map').setView([51.505, -0.09], 2);  // Standardansicht (Europa)
+
+    // OpenStreetMap-Kacheln hinzufügen
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    // Marker für jeden Kunden hinzufügen
+    {% for c in customers %}
+    {% if c.lat and c.lng %}
+    L.marker([{{ c.lat }}, {{ c.lng }}]).addTo(map)
+        .bindPopup(`
+            <b>{{ c.name }}</b><br>
+            {{ c.street }}, {{ c.postal_code }} {{ c.city }}<br>
+            {{ c.country }}<br>
+            <a href="{{ url_for('customer_detail', customer_id=c.id) }}">Details anzeigen</a>
+        `);
+    {% endif %}
+    {% endfor %}
+});
+</script>
+{% endif %}
 {% endblock %}

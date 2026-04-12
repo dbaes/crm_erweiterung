@@ -14,18 +14,17 @@ class Customer(db.Model):
     phone = db.Column(db.String(20))
     status = db.Column(db.String(20), default="prospect")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    street = db.Column(db.String(100))          # Adressfeld
-    postal_code = db.Column(db.String(20))      # Adressfeld
-    city = db.Column(db.String(50))             # Adressfeld
-    country = db.Column(db.String(50))           # Adressfeld
-    lat = db.Column(db.Float)                    # Koordinaten
-    lng = db.Column(db.Float)                    # Koordinaten
+    street = db.Column(db.String(100))
+    postal_code = db.Column(db.String(20))
+    city = db.Column(db.String(50))
+    country = db.Column(db.String(50))
+    lat = db.Column(db.Float)
+    lng = db.Column(db.Float)
     leads = db.relationship('Lead', backref='customer', lazy=True)
 
     @classmethod
     def add_customer(cls, name, email, company, phone, status="prospect",
                     street=None, postal_code=None, city=None, country=None, lat=None, lng=None):
-        """Fügt einen neuen Kunden mit Adressdaten hinzu."""
         customer = cls(
             name=name,
             email=email,
@@ -54,7 +53,6 @@ class Customer(db.Model):
     @classmethod
     def update_customer(cls, customer_id, name, email, company, phone, status="prospect",
                         street=None, postal_code=None, city=None, country=None, lat=None, lng=None):
-        """Aktualisiert einen bestehenden Kunden mit Adressdaten."""
         customer = cls.get_customer_by_id(customer_id)
         if customer:
             customer.name = name
@@ -89,17 +87,16 @@ class Lead(db.Model):
     status = db.Column(db.String(20), default="new")
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    street = db.Column(db.String(100))          # NEU: Adressfeld
-    postal_code = db.Column(db.String(20))      # NEU: Adressfeld
-    city = db.Column(db.String(50))             # NEU: Adressfeld
-    country = db.Column(db.String(50))           # NEU: Adressfeld
-    lat = db.Column(db.Float)                    # NEU: Koordinaten
-    lng = db.Column(db.Float)                    # NEU: Koordinaten
+    street = db.Column(db.String(100))
+    postal_code = db.Column(db.String(20))
+    city = db.Column(db.String(50))
+    country = db.Column(db.String(50))
+    lat = db.Column(db.Float)
+    lng = db.Column(db.Float)
 
     @classmethod
     def add_lead(cls, name, email, company, value, source, customer_id,
                  street=None, postal_code=None, city=None, country=None, lat=None, lng=None):
-        """Fügt einen neuen Lead mit Adressdaten hinzu."""
         lead = cls(
             name=name,
             email=email,
@@ -129,7 +126,6 @@ class Lead(db.Model):
     @classmethod
     def update_lead(cls, lead_id, name, email, company, value, source, customer_id,
                     street=None, postal_code=None, city=None, country=None, lat=None, lng=None):
-        """Aktualisiert einen bestehenden Lead mit Adressdaten."""
         lead = cls.get_lead_by_id(lead_id)
         if lead:
             lead.name = name
@@ -159,6 +155,7 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
     password_hash = db.Column(db.String(128), nullable=False)
+    role = db.Column(db.String(20), nullable=False, default="user")  # Standardrolle: "user"
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def set_password(self, password):
@@ -168,8 +165,8 @@ class User(db.Model, UserMixin):
         return check_password_hash(self.password_hash, password)
 
     @classmethod
-    def add_user(cls, username, password):
-        user = cls(username=username)
+    def add_user(cls, username, password, role="user"):
+        user = cls(username=username, role=role)
         user.set_password(password)
         db.session.add(user)
         db.session.commit()
@@ -182,3 +179,11 @@ class User(db.Model, UserMixin):
     @classmethod
     def get_user_by_username(cls, username):
         return cls.query.filter_by(username=username).first()
+
+    @classmethod
+    def update_user_role(cls, user_id, new_role):
+        user = cls.get_user_by_id(user_id)
+        if user:
+            user.role = new_role
+            db.session.commit()
+        return user

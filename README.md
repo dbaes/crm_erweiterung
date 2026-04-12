@@ -106,6 +106,11 @@ Falls die Datenbank komplett zurückgesetzt werden soll:
 - Registrierung und Anmeldung von Benutzern.
 - Schutz von Routen mit `@login_required`.
 
+### Benutzerrollen
+- Rollenbasierte Zugriffskontrolle (Rolle User und Admin)
+- Admin Dashboard
+- Rollen ändern
+
 ### Weitere Funktionen
 - Übersichtliche Darstellung von Kunden und Leads.
 - Bearbeitung und Löschung von Einträgen.
@@ -121,6 +126,11 @@ crm_erweiterung/
 ├── migrations/                  # Datenbankmigrationen
 ├── static/                      # Statische Dateien (CSS, JS)
 ├── templates/
+│   ├── auth/                    # Authentifizierungs-Templates
+│   │   ├── login.html
+│   │   └── register.html
+│   ├── admin/                   # Admin-Templates
+│   │   └── admin_dashboard.html # Admin-Dashboard
 │   ├── customers/               # Kunden-Templates
 │   ├── leads/                   # Lead-Templates
 │   └── base.html                # Basis-Template
@@ -141,6 +151,8 @@ Die Datenbankdatei (crm.db) wird automatisch im Projektverzeichnis erstellt.
 Migrationen ermöglichen kontrollierte Änderungen an der Datenbankstruktur.
 Die Adressvalidierung benötigt eine Internetverbindung, um die Nominatim-API von OpenStreetMap zu erreichen.
 Die Kartenansicht verwendet Leaflet.js und OpenStreetMap-Kacheln.
+Standardmäßig haben neue Benutzer die Rolle user.
+Nur Benutzer mit der Rolle admin haben Zugriff auf das Admin-Dashboard.
 
 ___
 
@@ -157,4 +169,7 @@ Stellen Sie sicher, dass die Adressdaten korrekt sind.
 Überprüfe, ob Leaflet.js korrekt geladen wird (siehe Browser-Konsole).
 Stellen Sie sicher, dass die Koordinaten (lat, lng) für den Kunden/Lead vorhanden sind.
 
+### Zugriff verweigert (403 Fehler)
+Stelle sicher, dass du als Admin angemeldet bist, um auf das Admin-Dashboard zuzugreifen.
+Überprüfe, ob die Rolle des Benutzers korrekt in der Datenbank gespeichert ist.
 

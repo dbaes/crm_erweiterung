@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, abort
 from flask_migrate import Migrate
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_cors import CORS
@@ -8,6 +8,7 @@ from api.routes import api_bp
 from api.external.adress_validator import AdressValidator
 import logging
 import sys
+from functools import wraps
 
 # --- App erstellen und Grundkonfiguration ---
 """
@@ -40,6 +41,20 @@ migrate = Migrate(app, db)  # Initialisiert Flask-Migrate für Datenbankmigratio
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'  # Route, die für nicht angemeldete Benutzer aufgerufen wird
 
+# --- Dekorator für Admin-Berechtigung ---
+def admin_required(f):
+    """
+    Dekorator, um sicherzustellen, dass nur Admins auf die Route zugreifen können.
+    """
+    @wraps(f)
+    @login_required
+    def decorated_function(*args, **kwargs):
+        if current_user.role != "admin":
+            logger.warning(f"Zugriff verweigert: Benutzer {current_user.username} (Rolle: {current_user.role}) versuchte auf Admin-Route {request.path} zuzugreifen.")
+            abort(403)  # HTTP 403 Forbidden
+        return f(*args, **kwargs)
+    return decorated_function
+
 # --- Login-Manager Konfiguration ---
 @login_manager.user_loader
 def load_user(user_id):
@@ -62,68 +77,208 @@ def load_user(user_id):
 def init_sample_data():
     """
     Fügt Beispieldaten in die Datenbank ein, falls diese leer ist.
-    Erstellt einen Beispielkunden und einen Beispiel-Lead mit validierten Adressen.
+    Erstellt drei Beispielkunden und drei Beispiel-Leads aus Österreich, Deutschland und der Schweiz.
     """
     try:
+        print("Starte init_sample_data()...")
         with app.app_context():
             validator = AdressValidator()
             if not Customer.query.first():
-                # Beispielkunden mit validierter Adresse erstellen
-                validation_result = validator.validate_adress('Opernring 1', '1010', 'Wien', 'Österreich')
+                print("Keine Kunden gefunden. Erstelle Beispieldaten...")
 
-                customer1 = Customer(
-                    name='John Doe',
-                    email='john@example.com',
-                    company='Acme Corp',
-                    phone='555-0001',
-                    status='active',
-                    street='Opernring 1',
-                    postal_code='1010',
-                    city='Wien',
-                    country='Österreich',
-                    lat=validation_result['lat'],
-                    lng=validation_result['lng']
-                )
-                db.session.add(customer1)
+                # Beispielkunden aus Österreich, Deutschland und der Schweiz
+                customers_data = [
+					{
+						'name': 'Max Mustermann',
+						'email': 'max@example.com',
+						'company': 'Alpen GmbH',
+						'phone': '555-1001',
+						'street': 'Mariahilfer Straße 81',
+						'postal_code': '1060',
+						'city': 'Wien',
+						'country': 'Österreich',
+						'default_lat': 48.2010,
+						'default_lng': 16.3550
+					},
+					{
+						'name': 'Anna Schmidt',
+						'email': 'anna@example.com',
+						'company': 'Rhein AG',
+						'phone': '555-1002',
+						'street': 'Königsallee 60',
+						'postal_code': '40212',
+						'city': 'Düsseldorf',
+						'country': 'Deutschland',
+						'default_lat': 51.2254,
+						'default_lng': 6.7763
+					},
+					{
+						'name': 'Marc Weber',
+						'email': 'marc@example.com',
+						'company': 'Alpenblick Ltd.',
+						'phone': '555-1003',
+						'street': 'Rämistrasse 7',
+						'postal_code': '8001',
+						'city': 'Zürich',
+						'country': 'Schweiz',
+						'default_lat': 47.3760,
+						'default_lng': 8.5480
+					}
+				]
 
-                # Beispiel-Lead mit validierter Adresse erstellen
-                validation_result = validator.validate_adress('Hauptstraße 1', '1010', 'Wien', 'Österreich')
-                lead1 = Lead(
-                    name='Jane Smith',
-                    email='jane@example.com',
-                    company='Tech Solutions',
-                    value=1000,
-                    source='Website',
-                    customer_id=customer1.id,
-                    street='Hauptstraße 1',
-                    postal_code='1010',
-                    city='Wien',
-                    country='Österreich',
-                    lat=validation_result['lat'],
-                    lng=validation_result['lng']
-                )
-                db.session.add(lead1)
+                customers = []
+                for data in customers_data:
+                    print(f"Validiere Adresse für {data['name']}...")
+                    validation_result = validator.validate_adress(
+                        data['street'],
+                        data['postal_code'],
+                        data['city'],
+                        data['country']
+                    )
+                    if not validation_result:
+                        print(f"Adressvalidierung für {data['name']} fehlgeschlagen! Verwende Standardkoordinaten.")
+                        validation_result = {'lat': data['default_lat'], 'lng': data['default_lng']}
+
+                    print(f"Erstelle Beispielkunde {data['name']}...")
+                    customer = Customer(
+                        name=data['name'],
+                        email=data['email'],
+                        company=data['company'],
+                        phone=data['phone'],
+                        status='active',
+                        street=data['street'],
+                        postal_code=data['postal_code'],
+                        city=data['city'],
+                        country=data['country'],
+                        lat=validation_result['lat'],
+                        lng=validation_result['lng']
+                    )
+                    db.session.add(customer)
+                    customers.append(customer)
+                    print(f"Beispielkunde {data['name']} erstellt.")
+
                 db.session.commit()
-                logger.info("Beispieldaten wurden eingefügt.")
+                print("Beispielkunden erfolgreich in die Datenbank geschrieben!")
+
+                # Beispiel-Leads für die erstellten Kunden
+                leads_data = [
+                    {
+                        'name': 'Österreichische Firma',
+                        'email': 'lead_at@example.com',
+                        'company': 'Quaxi',
+                        'value': 1000,
+                        'source': 'Website',
+                        'street': 'Mariahilfer Straße 30',
+                        'postal_code': '1070',
+                        'city': 'Wien',
+                        'country': 'Österreich',
+                        'default_lat': 48.2018,
+                        'default_lng': 16.3656,
+                        'customer_index': 0
+                    },
+                    {
+                        'name': 'Deutsche Firma',
+                        'email': 'lead_de@example.com',
+                        'company': 'Linden',
+                        'value': 1500,
+                        'source': 'Empfehlung',
+                        'street': 'Unter den Linden 1',
+                        'postal_code': '10117',
+                        'city': 'Berlin',
+                        'country': 'Deutschland',
+                        'default_lat': 52.5173,
+                        'default_lng': 13.3899,
+                        'customer_index': 1
+                    },
+                    {
+                        'name': 'Schweizer Firma',
+                        'email': 'lead_ch@example.com',
+                        'company': 'Ricola',
+                        'value': 2000,
+                        'source': 'Messe',
+                        'street': 'Limmatquai 1',
+                        'postal_code': '8001',
+                        'city': 'Zürich',
+                        'country': 'Schweiz',
+                        'default_lat': 47.3789,
+                        'default_lng': 8.5382,
+                        'customer_index': 2
+                    }
+                ]
+
+                for data in leads_data:
+                    print(f"Validiere Adresse für Lead {data['name']}...")
+                    validation_result = validator.validate_adress(
+                        data['street'],
+                        data['postal_code'],
+                        data['city'],
+                        data['country']
+                    )
+                    if not validation_result:
+                        print(f"Adressvalidierung für Lead {data['name']} fehlgeschlagen! Verwende Standardkoordinaten.")
+                        validation_result = {'lat': data['default_lat'], 'lng': data['default_lng']}
+
+                    print(f"Erstelle Beispiel-Lead {data['name']}...")
+                    lead = Lead(
+                        name=data['name'],
+                        email=data['email'],
+                        company=data['company'],
+                        value=data['value'],
+                        source=data['source'],
+                        customer_id=customers[data['customer_index']].id,
+                        street=data['street'],
+                        postal_code=data['postal_code'],
+                        city=data['city'],
+                        country=data['country'],
+                        lat=validation_result['lat'],
+                        lng=validation_result['lng']
+                    )
+                    db.session.add(lead)
+                    print(f"Beispiel-Lead {data['name']} erstellt.")
+
+                db.session.commit()
+                print("Beispiel-Leads erfolgreich in die Datenbank geschrieben!")
+            else:
+                print("Kunden existieren bereits. Keine neuen Beispieldaten angelegt.")
     except Exception as e:
-        logger.error(f"Fehler beim Einfügen der Beispieldaten: {e}")
-        db.session.rollback()  # Rollback bei Fehlern
+        print(f"Fehler beim Einfügen der Beispieldaten: {e}")
+        import traceback
+        traceback.print_exc()
+        db.session.rollback()
 
 def init_user_data():
     """
-    Erstellt einen Test-Benutzer, falls noch keiner existiert.
-    Benutzername: 'test', Passwort: 'test'
+    Erstellt einen Test-Benutzer und einen Admin-Benutzer, falls noch keine existieren.
+    Benutzername: 'user', Passwort: 'user' (Rolle: user)
+    Benutzername: 'admin', Passwort: 'admin' (Rolle: admin)
     """
     try:
+        print("Starte init_user_data()...")
         with app.app_context():
+            print("App-Kontext aktiv.")
             if not User.query.first():
-                admin = User(username='test')
-                admin.set_password('test')
+                print("Keine Benutzer gefunden. Erstelle Test-Benutzer...")
+
+                # Standardbenutzer
+                user = User(username='test', role='user')
+                user.set_password('test')
+                db.session.add(user)
+                print(f"Benutzer 'test' mit Rolle 'user' erstellt.")
+
+                # Admin-Benutzer
+                admin = User(username='admin', role='admin')
+                admin.set_password('admin')
                 db.session.add(admin)
+                print(f"Benutzer 'admin' mit Rolle 'admin' erstellt.")
+
                 db.session.commit()
-                logger.info("Test-Benutzer 'test' mit Passwort 'test' angelegt!")
+                print("Test-Benutzer erfolgreich angelegt und in die Datenbank geschrieben!")
+            else:
+                print("Benutzer existieren bereits. Keine neuen Benutzer angelegt.")
     except Exception as e:
-        logger.error(f"Fehler beim Anlegen des Test-Benutzers: {e}")
+        print(f"Fehler beim Anlegen der Test-Benutzer: {e}")
+        import traceback
+        traceback.print_exc()
         db.session.rollback()
 
 # --- API-Routen registrieren ---
@@ -138,12 +293,6 @@ app.register_blueprint(api_bp, url_prefix="/api")
 def api_not_found(error):
     """
     Behandelt 404-Fehler (Nicht gefunden) für API-Routen.
-
-    Args:
-        error: Der aufgetretene Fehler
-
-    Returns:
-        JSON: Fehlermeldung mit Statuscode 404
     """
     logger.error(f"404 Fehler: {error}")
     return jsonify({"error": "Endpoint nicht gefunden"}), 404
@@ -152,27 +301,23 @@ def api_not_found(error):
 def api_internal_error(error):
     """
     Behandelt 500-Fehler (Interner Serverfehler) für API-Routen.
-
-    Args:
-        error: Der aufgetretene Fehler
-
-    Returns:
-        JSON: Fehlermeldung mit Statuscode 500
     """
     logger.error(f"500 Fehler: {error}")
     return jsonify({"error": "Interner Serverfehler"}), 500
 
 # --- Globale Fehlerhandler ---
+@app.errorhandler(403)
+def forbidden(error):
+    """
+    Behandelt 403-Fehler (Zugriff verweigert).
+    """
+    logger.warning(f"403 Fehler: {error}")
+    return render_template('403.html'), 403
+
 @app.errorhandler(404)
 def page_not_found(error):
     """
     Behandelt 404-Fehler (Nicht gefunden) für die gesamte Anwendung.
-
-    Args:
-        error: Der aufgetretene Fehler
-
-    Returns:
-        Template: 404-Fehlerseite
     """
     logger.error(f"404 Fehler: {error}")
     return render_template('404.html'), 404
@@ -181,24 +326,22 @@ def page_not_found(error):
 def internal_error(error):
     """
     Behandelt 500-Fehler (Interner Serverfehler) für die gesamte Anwendung.
-
-    Args:
-        error: Der aufgetretene Fehler
-
-    Returns:
-        Template: 500-Fehlerseite
     """
     logger.error(f"500 Fehler: {error}")
     return render_template('500.html'), 500
 
 # --- Startseite ---
 @app.route('/')
-@login_required  # Stelle sicher, dass nur angemeldete Benutzer die Startseite sehen
+@login_required
 def index():
     """Zeigt die Startseite mit Statistiken und den neuesten Einträgen an."""
     try:
         total_customers = len(Customer.query.all())
         total_leads = len(Lead.query.all())
+
+        # Hole alle Kunden und Leads für die Karte
+        customers = Customer.query.all()
+        leads = Lead.query.all()
 
         # Hole die 5 neuesten Kunden und Leads, sortiert nach Erstellungsdatum
         newest_customers = Customer.query.order_by(Customer.created_at.desc()).limit(5).all()
@@ -208,6 +351,8 @@ def index():
             'index.html',
             total_customers=total_customers,
             total_leads=total_leads,
+            customers=customers,
+            leads=leads,
             newest_customers=newest_customers,
             newest_leads=newest_leads
         )
@@ -215,15 +360,45 @@ def index():
         logger.error(f"Fehler in der Index-Route: {e}")
         return render_template('500.html'), 500
 
-# --- Kunden-Route ---
+# --- Admin-Dashboard ---
+@app.route('/admin')
+@admin_required  # Nur Admins
+def admin_dashboard():
+    """
+    Zeigt das Admin-Dashboard mit Benutzerverwaltung an.
+    """
+    try:
+        users = User.query.all()
+        return render_template('admin_dashboard.html', users=users)
+    except Exception as e:
+        logger.error(f"Fehler im Admin-Dashboard: {e}")
+        return render_template('500.html'), 500
+
+# --- Benutzerrolle aktualisieren ---
+@app.route('/admin/users/<int:user_id>/update_role', methods=['POST'])
+@admin_required  # Nur Admins
+def update_user_role(user_id):
+    """
+    Aktualisiert die Rolle eines Benutzers (nur für Admins).
+    """
+    user = User.query.get_or_404(user_id)
+    new_role = request.form.get('role')
+
+    if new_role not in ['admin', 'user']:
+        flash('Ungültige Rolle! Nur "admin" oder "user" erlaubt.', 'error')
+        return redirect(url_for('admin_dashboard'))
+
+    user.role = new_role
+    db.session.commit()
+    flash(f'Rolle von {user.username} zu {user.role} geändert!', 'success')
+    return redirect(url_for('admin_dashboard'))
+
+# --- Kunden-Routen ---
 @app.route('/customers')
 @login_required
 def customers():
     """
     Zeigt alle Kunden an. Erfordert angemeldeten Benutzer.
-
-    Returns:
-        Template: Liste aller Kunden
     """
     try:
         customers_list = Customer.query.all()
@@ -232,17 +407,13 @@ def customers():
         logger.error(f"Fehler in der Customers-Route: {e}")
         return render_template('500.html'), 500
 
-# Add Customer Route
 @app.route('/customers/add', methods=['GET', 'POST'])
-@login_required
+@admin_required  # Nur Admins dürfen Kunden hinzufügen
 def add_customer():
     """
     Route zum Hinzufügen eines neuen Kunden.
     GET: Zeigt das Formular an.
     POST: Verarbeitet das Formular und speichert den Kunden mit validierter Adresse.
-
-    Returns:
-        Template: Formular zum Hinzufügen eines Kunden oder Redirect zur Kundenliste
     """
     validator = AdressValidator()
 
@@ -290,36 +461,22 @@ def add_customer():
     # Formular anzeigen
     return render_template('add_customer.html')
 
-# Customer Detail Route
 @app.route('/customers/<int:customer_id>')
 @login_required
 def customer_detail(customer_id):
     """
     Zeigt die Details eines bestimmten Kunden an.
-
-    Args:
-        customer_id (int): ID des Kunden
-
-    Returns:
-        Template: Detailansicht des Kunden
     """
     customer = Customer.query.get_or_404(customer_id)
     return render_template('customer_detail.html', customer=customer)
 
-# Edit Customer Route
 @app.route('/customers/<int:customer_id>/edit', methods=['GET', 'POST'])
-@login_required
+@admin_required  # Nur Admins dürfen Kunden bearbeiten
 def edit_customer(customer_id):
     """
     Route zum Bearbeiten eines Kunden.
     GET: Zeigt das Bearbeitungsformular an.
     POST: Verarbeitet das Formular und aktualisiert den Kunden mit validierter Adresse.
-
-    Args:
-        customer_id (int): ID des zu bearbeitenden Kunden
-
-    Returns:
-        Template: Bearbeitungsformular oder Redirect zur Kundendetailansicht
     """
     customer = Customer.query.get_or_404(customer_id)
     validator = AdressValidator()
@@ -357,18 +514,11 @@ def edit_customer(customer_id):
     # Bearbeitungsformular anzeigen
     return render_template('edit_customer.html', customer=customer)
 
-# Delete Customer Route
 @app.route('/customers/<int:customer_id>/delete', methods=['POST'])
-@login_required
+@admin_required  # Nur Admins dürfen Kunden löschen
 def delete_customer(customer_id):
     """
     Löscht einen Kunden aus der Datenbank.
-
-    Args:
-        customer_id (int): ID des zu löschenden Kunden
-
-    Returns:
-        Redirect: Zur Kundenliste mit Erfolgsmeldung
     """
     customer = Customer.query.get_or_404(customer_id)
     db.session.delete(customer)
@@ -377,15 +527,12 @@ def delete_customer(customer_id):
     flash('Kunde erfolgreich gelöscht!', 'success')
     return redirect(url_for('customers'))
 
-# --- Leads-Route ---
+# --- Leads-Routen ---
 @app.route('/leads')
 @login_required
 def leads():
     """
     Zeigt alle Leads an. Erfordert angemeldeten Benutzer.
-
-    Returns:
-        Template: Liste aller Leads
     """
     try:
         leads_list = Lead.query.all()
@@ -395,15 +542,12 @@ def leads():
         return render_template('500.html'), 500
 
 @app.route('/leads/add', methods=['GET', 'POST'])
-@login_required
+@admin_required  # Nur Admins dürfen Leads hinzufügen
 def add_lead():
     """
     Route zum Hinzufügen eines neuen Leads.
     GET: Zeigt das Formular an.
     POST: Verarbeitet das Formular und speichert den Lead mit validierter Adresse.
-
-    Returns:
-        Template: Formular zum Hinzufügen eines Leads oder Redirect zur Lead-Liste
     """
     if request.method == 'POST':
         # Formulardaten abrufen
@@ -468,29 +612,17 @@ def add_lead():
 def lead_detail(lead_id):
     """
     Zeigt die Details eines bestimmten Leads an.
-
-    Args:
-        lead_id (int): ID des Leads
-
-    Returns:
-        Template: Detailansicht des Leads
     """
     lead = Lead.query.get_or_404(lead_id)
     return render_template('lead_detail.html', lead=lead)
 
 @app.route('/leads/<int:lead_id>/edit', methods=['GET', 'POST'])
-@login_required
+@admin_required  # Nur Admins dürfen Leads bearbeiten
 def edit_lead(lead_id):
     """
     Route zum Bearbeiten eines Leads.
     GET: Zeigt das Bearbeitungsformular an.
     POST: Verarbeitet das Formular und aktualisiert den Lead mit validierter Adresse.
-
-    Args:
-        lead_id (int): ID des zu bearbeitenden Leads
-
-    Returns:
-        Template: Bearbeitungsformular oder Redirect zur Lead-Detailansicht
     """
     lead = Lead.query.get_or_404(lead_id)
     validator = AdressValidator()
@@ -530,16 +662,10 @@ def edit_lead(lead_id):
     return render_template('edit_lead.html', lead=lead, customers=customers)
 
 @app.route('/leads/<int:lead_id>/delete', methods=['POST'])
-@login_required
+@admin_required  # Nur Admins dürfen Leads löschen
 def delete_lead(lead_id):
     """
     Route zum Löschen eines Leads.
-
-    Args:
-        lead_id (int): ID des zu löschenden Leads
-
-    Returns:
-        Redirect: Zur Lead-Liste mit Erfolgsmeldung
     """
     lead = Lead.query.get_or_404(lead_id)
     db.session.delete(lead)
@@ -555,9 +681,6 @@ def login():
     Login-Seite.
     GET: Zeigt das Login-Formular an.
     POST: Verarbeitet das Login-Formular und authentifiziert den Benutzer.
-
-    Returns:
-        Template: Login-Formular oder Redirect zur Startseite bei Erfolg
     """
     if request.method == 'POST':
         username = request.form.get('username')
@@ -577,9 +700,6 @@ def register():
     Registrierungsseite.
     GET: Zeigt das Registrierungsformular an.
     POST: Verarbeitet das Registrierungsformular und erstellt einen neuen Benutzer.
-
-    Returns:
-        Template: Registrierungsformular oder Redirect zur Login-Seite bei Erfolg
     """
     if request.method == 'POST':
         username = request.form.get('username')
@@ -596,8 +716,8 @@ def register():
             flash('Benutzername bereits vergeben!', 'error')
             return redirect(url_for('register'))
 
-        # Neuen Benutzer erstellen
-        new_user = User(username=username)
+        # Neuen Benutzer erstellen (Standardrolle: user)
+        new_user = User(username=username, role='user')
         new_user.set_password(password)
         db.session.add(new_user)
         db.session.commit()
@@ -613,59 +733,12 @@ def register():
 def logout():
     """
     Logout-Seite. Beendet die Benutzersitzung.
-
-    Returns:
-        Redirect: Zur Startseite mit Erfolgsmeldung
     """
     logout_user()
     flash('Erfolgreich ausgeloggt.', 'info')
-    return redirect(url_for('index'))
+    return redirect(url_for('login'))
 
-# --- API-Endpoint für Adressvalidierung ---
-@app.route('/api/validate_address', methods=['POST'])
-def validate_address():
-    """
-    API-Endpoint zur Validierung einer Adresse.
-
-    Erwartet ein JSON-Objekt mit den Adressdaten (street, postal_code, city, country).
-    Validiert die Adresse mit dem AdressValidator und gibt die Koordinaten zurück.
-
-    Returns:
-        JSON: Erfolgstatus, Koordinaten und Nachricht
-    """
-    data = request.get_json()
-    street = data.get('street')
-    postal_code = data.get('postal_code')
-    city = data.get('city')
-    country = data.get('country')
-
-    # Überprüfen, ob alle Adressfelder vorhanden sind
-    if not all([street, postal_code, city, country]):
-        return jsonify({
-            'success': False,
-            'message': 'Alle Adressfelder sind erforderlich.'
-        }), 400
-
-    # Adresse validieren
-    validator = AdressValidator()
-    validation_result = validator.validate_adress(street, postal_code, city, country)
-
-    if validation_result:
-        # Erfolgreiche Validierung
-        return jsonify({
-            'success': True,
-            'lat': validation_result['lat'],
-            'lng': validation_result['lng'],
-            'message': 'Adresse erfolgreich validiert.'
-        })
-    else:
-        # Validierung fehlgeschlagen
-        return jsonify({
-            'success': False,
-            'message': 'Adresse konnte nicht validiert werden.'
-        }), 400
-
-# --- Euro Währung ---
+# --- Euro-Währung ---
 @app.template_filter('euro')
 def euro_format(value):
     """
@@ -679,7 +752,7 @@ def euro_format(value):
         return " {:,.2f} €".format(value).replace(",", "X").replace(".", ",").replace("X", ".")
     except (ValueError, TypeError):
         return value
-    
+
 # --- Anwendung starten ---
 if __name__ == '__main__':
     """
@@ -688,9 +761,19 @@ if __name__ == '__main__':
     """
     try:
         with app.app_context():
-            db.create_all()  # Erstellt alle Datenbanktabellen
-            init_sample_data()  # Fügt Beispieldaten hinzu
-            init_user_data()  # Erstellt einen Testbenutzer
+            print("Starte Datenbankinitialisierung...")
+            db.create_all()
+            print("Datenbanktabellen erstellt.")
+
+            print("Füge Beispieldaten hinzu...")
+            init_sample_data()
+
+            print("Erstelle Testbenutzer...")
+            init_user_data()
+
+            print("Alle Initialisierungen abgeschlossen.")
         app.run(debug=True, host='127.0.0.1', port=5000)  # Startet den Entwicklungsserver
     except Exception as e:
         logger.error(f"Fehler beim Starten der Anwendung: {e}")
+        import traceback
+        traceback.print_exc()

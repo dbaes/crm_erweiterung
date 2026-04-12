@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5 text-center">
+    <h1 class="display-4">403 - Zugriff verweigert</h1>
+    <p class="lead">Du hast keine Berechtigung, diese Seite zu betreten.</p>
+    <p>Bitte melde dich als Administrator an oder wende dich an den Support.</p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">Zurück zur Startseite</a>
+</div>
+{% endblock %}
