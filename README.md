@@ -14,6 +14,7 @@
 - [Setup](#setup)
 - [Datenbank und Migrationen](#datenbank-und-migrationen)
 - [Funktionen](#funktionen)
+- [API-Dokumentationen](#api-dokumentation)
 - [Projektstruktur](#projektstruktur)
 - [Abhängigkeiten](#abhängigkeiten)
 - [Wichtige Hinweise](#wichtige-hinweise)
@@ -91,6 +92,25 @@ Falls die Datenbank komplett zurückgesetzt werden soll:
    flask db upgrade
    ```
 
+## API-Dokumentation
+Diese Anwendung bietet eine REST-API für die Verwaltung von Kunden, Leads und Adressvalidierung.
+
+Die API ist mit OpenAPI/Swagger dokumentiert und kann interaktiv getestet werden.
+Swagger-UI
+Die API-Dokumentation ist über die Swagger-UI erreichbar:
+
+Lokale Entwicklungsumgebung:
+
+http://127.0.0.1:5000/api/docs
+
+Die API bietet folgende Endpoints:
+/api/customers	GET	Liste aller Kunden abrufen
+/api/customers	POST	Neuen Kunden erstellen
+/api/customers/{id}	GET 	Details zum Kunden abrufen
+/api/customers/{id}	PUT	Kunden aktuallisieren
+/api/customers/{id}	DELETE	Kunden löschen
+/api/validate_address	POST	Adresse validieren
+
 ## Funktionen
 
 ### Adressvalidierung
@@ -122,7 +142,9 @@ crm_erweiterung/
 ├── api/
 │   ├── external/
 │   │   └── adress_validator.py  # Adressvalidierung mit Nominatim-API
-│   └── routes.py                 # API-Routen
+│   ├── swagger/                 # OpenAPI/Swagger-Dokumentation
+│   │   └── swagger_template.yaml
+│   └── routes.py                # API-Routen
 ├── migrations/                  # Datenbankmigrationen
 ├── static/                      # Statische Dateien (CSS, JS)
 ├── templates/
@@ -138,6 +160,7 @@ crm_erweiterung/
 ├── models.py                    # Datenbankmodelle
 ├── requirements.txt             # Abhängigkeiten
 └── README.md                    # Diese Datei
+
 ```
 ## Abhängigkeiten
 ```bash

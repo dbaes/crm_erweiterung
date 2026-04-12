@@ -3,6 +3,7 @@ info:
   title: CRM REST API
   description: API für Adressvalidierung und Kundenverwaltung
   version: 1.0.0
+
 paths:
   /api/validate_address:
     post:
@@ -34,3 +35,104 @@ paths:
                   formattedAddress:
                     type: string
                     example: "Wien, Österreich"
+
+  /api/customers:
+    get:
+      summary: Liste aller Kunden abrufen
+      responses:
+        '200':
+          description: Erfolgreiche Abfrage
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Kunde'
+    post:
+      summary: Neuen Kunden erstellen
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Kunde'
+      responses:
+        '201':
+          description: Kunde erfolgreich erstellt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Kunde'
+
+  /api/customers/{id}:
+    get:
+      summary: Details eines Kunden abrufen
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Erfolgreiche Abfrage
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Kunde'
+        '404':
+          description: Kunde nicht gefunden
+    put:
+      summary: Kunden aktualisieren
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Kunde'
+      responses:
+        '200':
+          description: Kunde erfolgreich aktualisiert
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Kunde'
+        '404':
+          description: Kunde nicht gefunden
+    delete:
+      summary: Kunden löschen
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Kunde erfolgreich gelöscht
+        '404':
+          description: Kunde nicht gefunden
+
+components:
+  schemas:
+    Kunde:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Max Mustermann"
+        email:
+          type: string
+          example: "max@example.com"
+      required:
+        - name
+        - email

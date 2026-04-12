@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, abort
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, abort, send_from_directory
 from flask_migrate import Migrate
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_cors import CORS
@@ -6,6 +6,7 @@ from werkzeug.security import check_password_hash
 from models import db, Customer, Lead, User
 from api.routes import api_bp
 from api.external.adress_validator import AdressValidator
+from flask_swagger_ui import get_swaggerui_blueprint
 import logging
 import sys
 from functools import wraps
@@ -40,6 +41,49 @@ Initialisiert Flask-Erweiterungen wie Migrate für Datenbankmigrationen und Logi
 migrate = Migrate(app, db)  # Initialisiert Flask-Migrate für Datenbankmigrationen
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'  # Route, die für nicht angemeldete Benutzer aufgerufen wird
+
+# --- Swagger-UI-Konfiguration ---
+SWAGGER_URL = '/api/docs'  # URL, unter der die Swagger-UI erreichbar ist
+API_URL = '/api/swagger'   # URL, unter der die OpenAPI-Spezifikation bereitgestellt wird
+swaggerui_blueprint = get_swaggerui_blueprint(
+    SWAGGER_URL,
+    API_URL,
+    config={
+        'app_name': "CRM API"
+    }
+)
+app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
+
+# --- Endpoint für die OpenAPI-Spezifikation ---
+@app.route('/api/swagger')
+def swagger_spec():
+    """
+    Stellt die OpenAPI-Spezifikation als JSON bereit.
+    """
+    return send_from_directory('api/swagger', 'swagger_template.yaml')
+
+@app.route('/api/docs')
+def swagger_ui():
+    """
+    Zeigt die Swagger-UI für die API-Dokumentation an.
+    """
+    return redirect('/api/docs/')  # Weiterleitung zur Swagger-UI
+
+# --- Rest deiner bestehenden app.py ---
+# (Alle bestehenden Funktionen, Routen und Konfigurationen bleiben unverändert!)
+# ...
+# --- Anwendung starten ---
+if __name__ == '__main__':
+    try:
+        with app.app_context():
+            db.create_all()
+            init_sample_data()
+            init_user_data()
+        app.run(debug=True, host='127.0.0.1', port=5000)
+    except Exception as e:
+        logger.error(f"Fehler beim Starten der Anwendung: {e}")
+        import traceback
+        traceback.print_exc()
 
 # --- Dekorator für Admin-Berechtigung ---
 def admin_required(f):
