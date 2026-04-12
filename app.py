@@ -43,52 +43,90 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'login'  # Route, die für nicht angemeldete Benutzer aufgerufen wird
 
 # --- Swagger-UI-Konfiguration ---
+"""
+Konfiguriert die Swagger-UI für die API-Dokumentation.
+Die Swagger-UI ist unter '/api/docs' erreichbar und zeigt die OpenAPI-Spezifikation an.
+"""
 SWAGGER_URL = '/api/docs'  # URL, unter der die Swagger-UI erreichbar ist
 API_URL = '/api/swagger'   # URL, unter der die OpenAPI-Spezifikation bereitgestellt wird
+
+# Erstellt den Blueprint für die Swagger-UI
 swaggerui_blueprint = get_swaggerui_blueprint(
     SWAGGER_URL,
     API_URL,
     config={
-        'app_name': "CRM API"
+        'app_name': "CRM API",
+        'docExpansion': 'none',  # Standardmäßig alle Abschnitte zusammengeklappt
+        'persistAuthorization': True  # Authentifizierung bleibt erhalten
     }
 )
+
+# Registriert den Swagger-UI-Blueprint
 app.register_blueprint(swaggerui_blueprint, url_prefix=SWAGGER_URL)
 
 # --- Endpoint für die OpenAPI-Spezifikation ---
+"""
+Stellt die OpenAPI-Spezifikation als YAML-Datei bereit.
+Diese Datei wird von der Swagger-UI geladen, um die API-Dokumentation anzuzeigen.
+"""
 @app.route('/api/swagger')
 def swagger_spec():
     """
-    Stellt die OpenAPI-Spezifikation als JSON bereit.
+    Stellt die OpenAPI-Spezifikation als YAML-Datei bereit.
+
+    Returns:
+        file: Die OpenAPI-Spezifikationsdatei (swagger_template.yaml).
     """
     return send_from_directory('api/swagger', 'swagger_template.yaml')
 
-@app.route('/api/docs')
-def swagger_ui():
+# --- API-spezifische Fehlerhandler ---
+@api_bp.errorhandler(404)
+def api_not_found(error):
     """
-    Zeigt die Swagger-UI für die API-Dokumentation an.
-    """
-    return redirect('/api/docs/')  # Weiterleitung zur Swagger-UI
+    Behandelt 404-Fehler (Nicht gefunden) für API-Routen.
 
-# --- Rest deiner bestehenden app.py ---
-# (Alle bestehenden Funktionen, Routen und Konfigurationen bleiben unverändert!)
-# ...
-# --- Anwendung starten ---
-if __name__ == '__main__':
-    try:
-        with app.app_context():
-            db.create_all()
-            init_sample_data()
-            init_user_data()
-        app.run(debug=True, host='127.0.0.1', port=5000)
-    except Exception as e:
-        logger.error(f"Fehler beim Starten der Anwendung: {e}")
-        import traceback
-        traceback.print_exc()
+    Args:
+        error: Der aufgetretene Fehler.
+
+    Returns:
+        JSON: Fehlermeldung mit Statuscode 404.
+    """
+    logger.error(f"404 Fehler: {error}")
+    return jsonify({"error": "Endpoint nicht gefunden"}), 404
+
+@api_bp.errorhandler(500)
+def api_internal_error(error):
+    """
+    Behandelt 500-Fehler (Interner Serverfehler) für API-Routen.
+
+    Args:
+        error: Der aufgetretene Fehler.
+
+    Returns:
+        JSON: Fehlermeldung mit Statuscode 500.
+    """
+    logger.error(f"500 Fehler: {error}")
+    return jsonify({"error": "Interner Serverfehler"}), 500
+
+
+# --- API-Routen registrieren ---
+"""
+Registriert den API-Blueprint unter dem Präfix '/api'.
+Alle API-Routen sind unter diesem Präfix erreichbar.
+Die eigentlichen Routen sind in api/routes.py definiert.
+"""
+app.register_blueprint(api_bp, url_prefix="/api")
 
 # --- Dekorator für Admin-Berechtigung ---
 def admin_required(f):
     """
     Dekorator, um sicherzustellen, dass nur Admins auf die Route zugreifen können.
+
+    Args:
+        f: Die zu dekorierende Funktion.
+
+    Returns:
+        function: Die dekorierte Funktion.
     """
     @wraps(f)
     @login_required
@@ -106,10 +144,10 @@ def load_user(user_id):
     Lädt einen Benutzer für Flask-Login.
 
     Args:
-        user_id (str): Die Benutzer-ID aus der Session
+        user_id (str): Die Benutzer-ID aus der Session.
 
     Returns:
-        User: Das Benutzerobjekt oder None, wenn der Benutzer nicht gefunden wird
+        User: Das Benutzerobjekt oder None, wenn der Benutzer nicht gefunden wird.
     """
     try:
         return User.query.get(int(user_id))
@@ -132,43 +170,43 @@ def init_sample_data():
 
                 # Beispielkunden aus Österreich, Deutschland und der Schweiz
                 customers_data = [
-					{
-						'name': 'Max Mustermann',
-						'email': 'max@example.com',
-						'company': 'Alpen GmbH',
-						'phone': '555-1001',
-						'street': 'Mariahilfer Straße 81',
-						'postal_code': '1060',
-						'city': 'Wien',
-						'country': 'Österreich',
-						'default_lat': 48.2010,
-						'default_lng': 16.3550
-					},
-					{
-						'name': 'Anna Schmidt',
-						'email': 'anna@example.com',
-						'company': 'Rhein AG',
-						'phone': '555-1002',
-						'street': 'Königsallee 60',
-						'postal_code': '40212',
-						'city': 'Düsseldorf',
-						'country': 'Deutschland',
-						'default_lat': 51.2254,
-						'default_lng': 6.7763
-					},
-					{
-						'name': 'Marc Weber',
-						'email': 'marc@example.com',
-						'company': 'Alpenblick Ltd.',
-						'phone': '555-1003',
-						'street': 'Rämistrasse 7',
-						'postal_code': '8001',
-						'city': 'Zürich',
-						'country': 'Schweiz',
-						'default_lat': 47.3760,
-						'default_lng': 8.5480
-					}
-				]
+                    {
+                        'name': 'Max Mustermann',
+                        'email': 'max@example.com',
+                        'company': 'Alpen GmbH',
+                        'phone': '555-1001',
+                        'street': 'Mariahilfer Straße 81',
+                        'postal_code': '1060',
+                        'city': 'Wien',
+                        'country': 'Österreich',
+                        'default_lat': 48.2010,
+                        'default_lng': 16.3550
+                    },
+                    {
+                        'name': 'Anna Schmidt',
+                        'email': 'anna@example.com',
+                        'company': 'Rhein AG',
+                        'phone': '555-1002',
+                        'street': 'Königsallee 60',
+                        'postal_code': '40212',
+                        'city': 'Düsseldorf',
+                        'country': 'Deutschland',
+                        'default_lat': 51.2254,
+                        'default_lng': 6.7763
+                    },
+                    {
+                        'name': 'Marc Weber',
+                        'email': 'marc@example.com',
+                        'company': 'Alpenblick Ltd.',
+                        'phone': '555-1003',
+                        'street': 'Rämistrasse 7',
+                        'postal_code': '8001',
+                        'city': 'Zürich',
+                        'country': 'Schweiz',
+                        'default_lat': 47.3760,
+                        'default_lng': 8.5480
+                    }
+                ]
 
                 customers = []
                 for data in customers_data:
@@ -324,55 +362,6 @@ def init_user_data():
         import traceback
         traceback.print_exc()
         db.session.rollback()
-
-# --- API-Routen registrieren ---
-"""
-Registriert den API-Blueprint unter dem Präfix '/api'.
-Alle API-Routen sind unter diesem Präfix erreichbar.
-"""
-app.register_blueprint(api_bp, url_prefix="/api")
-
-# --- API-spezifische Fehlerhandler ---
-@api_bp.errorhandler(404)
-def api_not_found(error):
-    """
-    Behandelt 404-Fehler (Nicht gefunden) für API-Routen.
-    """
-    logger.error(f"404 Fehler: {error}")
-    return jsonify({"error": "Endpoint nicht gefunden"}), 404
-
-@api_bp.errorhandler(500)
-def api_internal_error(error):
-    """
-    Behandelt 500-Fehler (Interner Serverfehler) für API-Routen.
-    """
-    logger.error(f"500 Fehler: {error}")
-    return jsonify({"error": "Interner Serverfehler"}), 500
-
-# --- Globale Fehlerhandler ---
-@app.errorhandler(403)
-def forbidden(error):
-    """
-    Behandelt 403-Fehler (Zugriff verweigert).
-    """
-    logger.warning(f"403 Fehler: {error}")
-    return render_template('403.html'), 403
-
-@app.errorhandler(404)
-def page_not_found(error):
-    """
-    Behandelt 404-Fehler (Nicht gefunden) für die gesamte Anwendung.
-    """
-    logger.error(f"404 Fehler: {error}")
-    return render_template('404.html'), 404
-
-@app.errorhandler(500)
-def internal_error(error):
-    """
-    Behandelt 500-Fehler (Interner Serverfehler) für die gesamte Anwendung.
-    """
-    logger.error(f"500 Fehler: {error}")
-    return render_template('500.html'), 500
 
 # --- Startseite ---
 @app.route('/')
