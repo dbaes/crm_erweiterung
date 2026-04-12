@@ -92,24 +92,29 @@ Falls die Datenbank komplett zurückgesetzt werden soll:
    flask db upgrade
    ```
 
-## API-Dokumentation
-Diese Anwendung bietet eine REST-API für die Verwaltung von Kunden, Leads und Adressvalidierung.
+##  API-Dokumentation
+Die Anwendung stellt eine **REST-API** für Kundenverwaltung und Adressvalidierung bereit.
+Die API ist mit **OpenAPI/Swagger** dokumentiert und kann interaktiv getestet werden.
 
-Die API ist mit OpenAPI/Swagger dokumentiert und kann interaktiv getestet werden.
-Swagger-UI
-Die API-Dokumentation ist über die Swagger-UI erreichbar:
+### Swagger-UI
+Die API-Dokumentation ist unter folgender URL erreichbar:
+[http://127.0.0.1:5000/api/docs](http://127.0.0.1:5000/api/docs)
 
-Lokale Entwicklungsumgebung:
+### Verfügbare Endpoints
+| Endpoint                     | Methode | Beschreibung                          | Beispiel                                                                 |
+|------------------------------|---------|--------------------------------------|--------------------------------------------------------------------------|
+| `/api/customers`             | GET     | Liste aller Kunden abrufen           | `curl -X GET http://127.0.0.1:5000/api/customers`                        |
+| `/api/customers`             | POST    | Neuen Kunden erstellen               | `curl -X POST http://127.0.0.1:5000/api/customers -H "Content-Type: application/json" -d '{"name": "Max", "email": "max@example.com"}'` |
+| `/api/customers/{id}`        | GET     | Details eines Kunden abrufen         | `curl -X GET http://127.0.0.1:5000/api/customers/1`                     |
+| `/api/customers/{id}`        | PUT     | Kunden aktualisieren                  | `curl -X PUT http://127.0.0.1:5000/api/customers/1 -H "Content-Type: application/json" -d '{"name": "Max Mustermann"}'` |
+| `/api/customers/{id}`        | DELETE  | Kunden löschen                       | `curl -X DELETE http://127.0.0.1:5000/api/customers/1`                   |
+| `/api/validate_address`      | POST    | Adresse validieren                   | `curl -X POST http://127.0.0.1:5000/api/validate_address -H "Content-Type: application/json" -d '{"address": "Wien, Österreich"}'` |
 
-http://127.0.0.1:5000/api/docs
+### OpenAPI-Spezifikation
+Die OpenAPI-Spezifikation liegt im Projekt unter:
+[`/api/swagger/swagger_template.yaml`](api/swagger/swagger_template.yaml)
 
-Die API bietet folgende Endpoints:
-/api/customers	GET	Liste aller Kunden abrufen
-/api/customers	POST	Neuen Kunden erstellen
-/api/customers/{id}	GET 	Details zum Kunden abrufen
-/api/customers/{id}	PUT	Kunden aktuallisieren
-/api/customers/{id}	DELETE	Kunden löschen
-/api/validate_address	POST	Adresse validieren
+---
 
 ## Funktionen
 
@@ -130,6 +135,19 @@ Die API bietet folgende Endpoints:
 - Rollenbasierte Zugriffskontrolle (Rolle User und Admin)
 - Admin Dashboard
 - Rollen ändern
+
+## ZulipChat-Integration
+Das CRM-System unterstützt die Integration mit **ZulipChat**, um Benachrichtigungen über neue Kunden, Leads oder wichtige Ereignisse in Echtzeit an definierte Zulip-Streams zu senden.
+
+### Voraussetzungen
+- Ein **Zulip-Server** (z. B. [zulipchat.com](https://zulipchat.com)).
+- Ein **Zulip-Bot** mit den erforderlichen Berechtigungen (Stream-Schreibrechte).
+- Die folgenden Konfigurationsvariablen in deiner Flask-Anwendung:
+  ```python
+  ZULIP_SITE = "https://zulipchat.com"  # URL deiner Zulip-Instanz
+  ZULIP_BOT_EMAIL = "dein-bot@example.com"  # E-Mail-Adresse des Bots
+  ZULIP_API_KEY = "dein-api-token"           # API-Token des Bots
+  ZULIP_STREAM = "crm-benachrichtigungen"    # Name des Ziel-Streams
 
 ### Weitere Funktionen
 - Übersichtliche Darstellung von Kunden und Leads.

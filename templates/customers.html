@@ -24,17 +24,18 @@
         <td>{{ c.phone }}</td>
         <td>{{ c.status }}</td>
         <td>
-            <a href="{{ url_for('customer_detail', customer_id=c.id) }}" class="btn btn-sm btn-primary">View</a>
+            <a href="{{ url_for('customer_detail', customer_id=c.id) }}" class="btn btn-sm btn-info">View</a>
             <a href="{{ url_for('edit_customer', customer_id=c.id) }}" class="btn btn-sm btn-primary">Edit</a>
-            <form method="POST" action="{{ url_for('delete_customer', customer_id=c.id) }}" style="display:inline">
-                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Delete?')">Delete</button>
+            
+            {# Geändert: Nutzt jetzt den API-Pfad, wie von Flask vorgeschlagen #}
+            <form method="POST" action="{{ url_for('api.api_delete_customer', customer_id=c.id) }}" style="display:inline">
+                <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('Wirklich löschen?')">Delete</button>
             </form>
         </td>
     </tr>
     {% endfor %}
 </table>
 
-<!-- Karte für Kundenadressen -->
 {% if customers %}
 <div class="mt-4">
     <h2>Kundenstandorte</h2>
@@ -43,26 +44,22 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Karte initialisieren
-    var map = L.map('map').setView([51.505, -0.09], 2);  // Standardansicht (Europa)
+    var map = L.map('map').setView([48.2, 16.3], 4);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-    // OpenStreetMap-Kacheln hinzufügen
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map);
-
-    // Marker für jeden Kunden hinzufügen
+    var markers = [];
     {% for c in customers %}
     {% if c.lat and c.lng %}
-    L.marker([{{ c.lat }}, {{ c.lng }}]).addTo(map)
-        .bindPopup(`
-            <b>{{ c.name }}</b><br>
-            {{ c.street }}, {{ c.postal_code }} {{ c.city }}<br>
-            {{ c.country }}<br>
-            <a href="{{ url_for('customer_detail', customer_id=c.id) }}">Details anzeigen</a>
-        `);
+    var m = L.marker([{{ c.lat }}, {{ c.lng }}]).addTo(map)
+        .bindPopup(`<b>{{ c.name }}</b><br><a href="{{ url_for('customer_detail', customer_id=c.id) }}">Details</a>`);
+    markers.push(m);
     {% endif %}
     {% endfor %}
+
+    if (markers.length > 0) {
+        var group = new L.featureGroup(markers);
+        map.fitBounds(group.getBounds().pad(0.1));
+    }
 });
 </script>
 {% endif %}

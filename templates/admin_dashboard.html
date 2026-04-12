@@ -30,7 +30,7 @@
                             </span>
                         </td>
                         <td>
-                            <form action="{{ url_for('update_user_role', user_id=user.id) }}" method="post">
+                            <form action="{{ url_for('api.api_update_user_role', user_id=user.id) }}" method="post">
                                 <select name="role" class="form-select form-select-sm d-inline w-auto">
                                     <option value="user" {% if user.role == 'user' %}selected{% endif %}>Benutzer</option>
                                     <option value="admin" {% if user.role == 'admin' %}selected{% endif %}>Admin</option>
